@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import ContactCard from "@/components/contact-card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ type Props = {
   useCase: UseCase;
   userName: string;
   tutorialCompleted: boolean;
+  showUpgradeSuccess?: boolean;
 };
 
 const TOUR_KEY = "orei_tour_completed";
@@ -77,7 +78,7 @@ async function startTour() {
   driverObj.drive();
 }
 
-export default function DashboardClient({ contacts: initialContacts, remaining, limit, plan, useCase: initialUseCase, userName, tutorialCompleted }: Props) {
+export default function DashboardClient({ contacts: initialContacts, remaining, limit, plan, useCase: initialUseCase, userName, tutorialCompleted, showUpgradeSuccess }: Props) {
   const supabase = createClient();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -103,16 +104,13 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
     setModeChanging(false);
   }
 
-  // 決済完了後のplan同期（?upgraded=1）
+  // 決済完了後のトースト表示（同期はサーバーサイドで完了済み）
   useEffect(() => {
-    if (searchParams.get("upgraded") !== "1" || syncedRef.current) return;
+    if (!showUpgradeSuccess || syncedRef.current) return;
     syncedRef.current = true;
-    fetch("/api/stripe/sync-plan", { method: "POST" })
-      .finally(() => {
-        toast.success("PERSONALプランへのアップグレードが完了しました 🎉");
-        setTimeout(() => { window.location.href = "/dashboard"; }, 1500);
-      });
-  }, [searchParams, router]);
+    toast.success("PERSONALプランへのアップグレードが完了しました 🎉");
+    router.replace("/dashboard");
+  }, [showUpgradeSuccess, router]);
 
   // 無料枠を使い切ったら必ずポップアップを表示（過去の dismissal フラグをリセット）
   useEffect(() => {
