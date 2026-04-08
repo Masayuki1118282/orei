@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import DashboardClient from "./dashboard-client";
 import { PLAN_LIMITS, PlanType, UseCase } from "@/types";
 
+export const dynamic = "force-dynamic";
+
 export default async function DashboardPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

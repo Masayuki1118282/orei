@@ -108,15 +108,10 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
     if (searchParams.get("upgraded") !== "1" || syncedRef.current) return;
     syncedRef.current = true;
     fetch("/api/stripe/sync-plan", { method: "POST" })
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.plan && data.plan !== "free") {
-          toast.success("PERSONALプランへのアップグレードが完了しました 🎉");
-          // ハードリロードでサーバーから最新プランを取得
-          setTimeout(() => { window.location.href = "/dashboard"; }, 1500);
-        }
-      })
-      .catch(() => {});
+      .finally(() => {
+        toast.success("PERSONALプランへのアップグレードが完了しました 🎉");
+        setTimeout(() => { window.location.href = "/dashboard"; }, 1500);
+      });
   }, [searchParams, router]);
 
   // 無料枠を使い切ったら必ずポップアップを表示（過去の dismissal フラグをリセット）
