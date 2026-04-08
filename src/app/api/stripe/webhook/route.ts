@@ -64,14 +64,29 @@ export async function POST(request: Request) {
 
       case "customer.subscription.updated": {
         const sub = event.data.object as Stripe.Subscription;
+        console.log("[webhook] subscription.updated:", sub.id, "status:", sub.status);
         const customer = await stripe.customers.retrieve(sub.customer as string);
         if (customer.deleted) break;
 
         const userId = (customer as Stripe.Customer).metadata?.supabase_user_id;
         if (!userId) break;
 
+        // 現在DBに保存されているサブスクリプションIDを確認
+        const { data: currentProfile } = await serviceClient
+          .from("profiles")
+          .select("stripe_subscription_id, plan")
+          .eq("id", userId)
+          .single();
+        console.log("[webhook] subscription.updated: DB current sub_id:", currentProfile?.stripe_subscription_id, "event sub_id:", sub.id);
+
         const isActive = sub.status === "active" || sub.status === "trialing";
         if (!isActive) {
+          // 古いサブスクリプションのキャンセルイベントでplanをfreeに戻さない
+          if (currentProfile?.stripe_subscription_id !== sub.id) {
+            console.log("[webhook] subscription.updated: 古いサブスクの非activeイベントのため無視");
+            break;
+          }
+          console.log("[webhook] subscription.updated: 現在のサブスクが非active → plan=free");
           await serviceClient
             .from("profiles")
             .update({ plan: "free", stripe_subscription_id: null })
@@ -90,21 +105,36 @@ export async function POST(request: Request) {
           .from("profiles")
           .update({ plan: updatedPlan, stripe_subscription_id: sub.id })
           .eq("id", userId);
+        console.log("[webhook] subscription.updated: plan →", updatedPlan);
         break;
       }
 
       case "customer.subscription.deleted": {
         const sub = event.data.object as Stripe.Subscription;
+        console.log("[webhook] subscription.deleted:", sub.id);
         const customer = await stripe.customers.retrieve(sub.customer as string);
         if (customer.deleted) break;
 
         const userId = (customer as Stripe.Customer).metadata?.supabase_user_id;
         if (!userId) break;
 
+        // 現在のサブスクリプションと一致する場合のみfreeに戻す
+        const { data: currentProfile } = await serviceClient
+          .from("profiles")
+          .select("stripe_subscription_id")
+          .eq("id", userId)
+          .single();
+
+        if (currentProfile?.stripe_subscription_id !== sub.id) {
+          console.log("[webhook] subscription.deleted: 古いサブスクのため無視");
+          break;
+        }
+
         await serviceClient
           .from("profiles")
           .update({ plan: "free", stripe_subscription_id: null })
           .eq("id", userId);
+        console.log("[webhook] subscription.deleted: plan → free");
         break;
       }
     }

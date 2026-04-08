@@ -103,13 +103,13 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
     setModeChanging(false);
   }
 
-  // 決済完了後のトースト表示（同期はサーバーサイドで完了済み）
+  // 決済完了後のトースト表示（URLだけ静かに変える、サーバー再レンダリングしない）
   useEffect(() => {
     if (!showUpgradeSuccess || syncedRef.current) return;
     syncedRef.current = true;
     toast.success("PERSONALプランへのアップグレードが完了しました 🎉");
-    router.replace("/dashboard");
-  }, [showUpgradeSuccess, router]);
+    window.history.replaceState({}, "", "/dashboard");
+  }, [showUpgradeSuccess]);
 
   // 無料枠を使い切ったら必ずポップアップを表示（過去の dismissal フラグをリセット）
   useEffect(() => {
