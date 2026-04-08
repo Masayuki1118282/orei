@@ -112,8 +112,8 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
       .then((data) => {
         if (data.plan && data.plan !== "free") {
           toast.success("PERSONALプランへのアップグレードが完了しました 🎉");
-          // クエリパラメータを消してリロード
-          router.replace("/dashboard");
+          // ハードリロードでサーバーから最新プランを取得
+          setTimeout(() => { window.location.href = "/dashboard"; }, 1500);
         }
       })
       .catch(() => {});
