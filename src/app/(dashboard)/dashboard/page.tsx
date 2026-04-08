@@ -28,6 +28,7 @@ export default async function DashboardPage() {
   const useCase = (profile?.use_case ?? "thank_you") as UseCase;
   const limit = PLAN_LIMITS[plan];
   const remaining = Math.max(0, limit - (profile?.monthly_usage ?? 0));
+  console.log("[dashboard/page] user.id:", user.id, "profile.plan:", profile?.plan, "remaining:", remaining);
 
   return (
     <DashboardClient
