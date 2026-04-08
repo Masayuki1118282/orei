@@ -799,8 +799,9 @@ export default function LandingPage() {
               OREIが、名刺交換の<br />翌日を変える
             </h2>
             <p className="mb-10 leading-relaxed" style={{ color: "var(--color-muted)", fontSize: "16px" }}>
-              相手の会社情報をAIが自動で調査。
-              パーソナライズされたお礼メールを3秒で生成し、
+              相手の会社情報をAIが自動で調査。<br />
+              その情報をもとに、ちょっとだけ気の利いた<br />
+              パーソナライズされたお礼メールを3秒で生成し、<br />
               翌日のアクションを確実に実行できます。
             </p>
           </motion.div>
