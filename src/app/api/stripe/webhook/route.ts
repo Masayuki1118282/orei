@@ -29,21 +29,36 @@ export async function POST(request: Request) {
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
+        console.log("[webhook] checkout.session.completed:", session.id);
+        console.log("[webhook] metadata:", JSON.stringify(session.metadata));
+
         const userId = session.metadata?.supabase_user_id;
-        if (!userId) break;
+        if (!userId) {
+          console.error("[webhook] supabase_user_id が metadata に存在しません");
+          break;
+        }
+        console.log("[webhook] userId:", userId);
 
         // metadataのplan_typeで月額/年額を判別
         const planType = session.metadata?.plan_type === "personal_yearly"
           ? "personal_yearly"
           : "personal_monthly";
+        console.log("[webhook] planType:", planType);
+        console.log("[webhook] subscription id:", session.subscription);
 
-        await serviceClient
+        const { error: updateError } = await serviceClient
           .from("profiles")
           .update({
             plan: planType,
             stripe_subscription_id: session.subscription as string,
           })
           .eq("id", userId);
+
+        if (updateError) {
+          console.error("[webhook] profiles UPDATE 失敗:", updateError);
+          throw updateError;
+        }
+        console.log("[webhook] profiles UPDATE 成功 → plan:", planType);
         break;
       }
 
