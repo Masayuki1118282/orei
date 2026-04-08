@@ -40,9 +40,10 @@ export default function WelcomeModal({ open, onComplete }: Props) {
   }
 
   return (
-    <Dialog open={open} dismissible={false}>
+    <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent
         className="max-w-md rounded-2xl"
+        showCloseButton={false}
         style={{ backgroundColor: "var(--color-surface)" }}
       >
         <DialogHeader>
