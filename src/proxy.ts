@@ -31,6 +31,11 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  // Stripe webhookは認証不要
+  if (pathname === "/api/stripe/webhook") {
+    return NextResponse.next();
+  }
+
   // 未ログインで保護ルートにアクセス → /login へリダイレクト
   if (
     !user &&
