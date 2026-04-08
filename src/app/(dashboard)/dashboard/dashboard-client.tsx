@@ -81,7 +81,6 @@ async function startTour() {
 export default function DashboardClient({ contacts: initialContacts, remaining, limit, plan, useCase: initialUseCase, userName, tutorialCompleted, showUpgradeSuccess }: Props) {
   const supabase = createClient();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const syncedRef = useRef(false);
   const [contacts, setContacts] = useState<Contact[]>(initialContacts);
   const [offerOpen, setOfferOpen] = useState(false);
