@@ -7,9 +7,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-sans);
+  --font-sans: var(--font-noto-sans-jp), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sora), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono);
-  --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -49,8 +49,17 @@
 }
 
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  /* OREIカラーシステム */
+  --color-primary:  #1B3A6B;
+  --color-accent:   #3D9E72;
+  --color-bg:       #FAFAFA;
+  --color-surface:  #FFFFFF;
+  --color-text:     #1A1A2E;
+  --color-muted:    #6B7280;
+  --color-border:   #E5E7EB;
+
+  --background: oklch(0.98 0 0);
+  --foreground: oklch(0.1 0.02 260);
   --card: oklch(1 0 0);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
@@ -123,8 +132,40 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    font-size: 16px; /* iOSの自動ズーム防止 */
   }
   html {
     @apply font-sans;
   }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+  }
+}
+/* driver.js OREIカスタムスタイル */
+.orei-driver-popover .driver-popover-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1a2e22;
+}
+.orei-driver-popover .driver-popover-description {
+  font-size: 0.875rem;
+  color: #4b5563;
+  line-height: 1.7;
+}
+.orei-driver-popover .driver-popover-next-btn,
+.orei-driver-popover .driver-popover-done-btn {
+  background-color: #3D9E72 !important;
+  border-color: #3D9E72 !important;
+  color: #fff !important;
+  border-radius: 8px;
+}
+.orei-driver-popover .driver-popover-next-btn:hover,
+.orei-driver-popover .driver-popover-done-btn:hover {
+  background-color: #2d7a58 !important;
+}
+.orei-driver-popover .driver-popover-prev-btn {
+  border-radius: 8px;
 }
