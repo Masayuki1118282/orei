@@ -19,7 +19,10 @@ export async function POST(request: Request) {
       .eq("id", user.id)
       .single();
 
+    console.log("[sync-plan] profile.plan:", profile?.plan, "stripe_customer_id:", profile?.stripe_customer_id);
+
     if (!profile?.stripe_customer_id) {
+      console.error("[sync-plan] stripe_customer_id が未設定");
       return NextResponse.json({ plan: profile?.plan ?? "free" });
     }
 
@@ -30,8 +33,15 @@ export async function POST(request: Request) {
       limit: 1,
     });
 
+    console.log("[sync-plan] active subscriptions count:", subscriptions.data.length);
     if (subscriptions.data.length === 0) {
-      return NextResponse.json({ plan: "free" });
+      // incomplete含め全サブスクを確認
+      const allSubs = await stripe.subscriptions.list({
+        customer: profile.stripe_customer_id,
+        limit: 5,
+      });
+      console.log("[sync-plan] all subscriptions:", allSubs.data.map(s => ({ id: s.id, status: s.status })));
+      return NextResponse.json({ plan: profile?.plan ?? "free" });
     }
 
     const sub = subscriptions.data[0];
