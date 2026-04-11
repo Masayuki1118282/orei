@@ -215,12 +215,14 @@ export async function POST(request: Request) {
         subjects: result.subjects,
         bodies: result.bodies,
         followups: result.followups,
+        use_case: useCase,
       });
     }
 
     return NextResponse.json({
       ...result,
       remainingUsage: limit - currentUsage - 1,
+      use_case: useCase,
     });
   } catch (error) {
     console.error("Generate error:", error);

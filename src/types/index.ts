@@ -49,6 +49,7 @@ export type GeneratedEmail = {
   subjects: string[];
   bodies: string[];
   followups: { timing: string; body: string }[];
+  use_case: UseCase;
   created_at: string;
 };
 

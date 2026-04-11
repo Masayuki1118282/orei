@@ -12,13 +12,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { Contact, GeneratedEmail } from "@/types";
+import { Contact, GeneratedEmail, UseCase } from "@/types";
 
 type EmailResult = {
   subjects: string[];
   bodies: string[];
   followups: { timing: string; body: string }[];
   remainingUsage: number;
+  use_case?: UseCase;
 };
 
 type Props = {
@@ -30,7 +31,7 @@ type Props = {
 export default function EmailGenerator({ contact, initialEmail, onUsageLimitExceeded }: Props) {
   const [result, setResult] = useState<EmailResult | null>(
     initialEmail
-      ? { subjects: initialEmail.subjects, bodies: initialEmail.bodies, followups: initialEmail.followups, remainingUsage: 0 }
+      ? { subjects: initialEmail.subjects, bodies: initialEmail.bodies, followups: initialEmail.followups, remainingUsage: 0, use_case: initialEmail.use_case }
       : null
   );
   const [loading, setLoading] = useState(false);
@@ -64,7 +65,7 @@ export default function EmailGenerator({ contact, initialEmail, onUsageLimitExce
       }
 
       const data: EmailResult = await res.json();
-      setResult(data);
+      setResult({ ...data, use_case: data.use_case });
       setSelectedIndex(0);
     } catch {
       toast.error("生成に失敗しました。もう一度お試しください");
@@ -166,9 +167,18 @@ export default function EmailGenerator({ contact, initialEmail, onUsageLimitExce
     <div className="mt-6 space-y-6">
       {/* 残り使用回数 */}
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
-          生成完了
-        </p>
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
+            生成完了
+          </p>
+          <Badge style={{
+            backgroundColor: result.use_case === "cold_dm" ? "#eff6ff" : "#f0faf5",
+            color: result.use_case === "cold_dm" ? "#1d4ed8" : "var(--color-accent)",
+            border: "none",
+          }}>
+            {result.use_case === "cold_dm" ? "新規アプローチ" : "挨拶メール"}
+          </Badge>
+        </div>
         {result.remainingUsage > 0 && (
           <Badge variant="outline" style={{ borderColor: "var(--color-border)", color: "var(--color-muted)" }}>
             今月あと {result.remainingUsage} 通使えます
