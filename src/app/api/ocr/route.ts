@@ -27,7 +27,7 @@ export async function POST(request: Request) {
       };
     }
 
-    const imageBlocks: object[] = [];
+    const imageBlocks: { type: "image"; source: { type: "base64"; media_type: "image/jpeg" | "image/png" | "image/webp" | "image/gif"; data: string } }[] = [];
     if (frontFile) {
       const { data, mediaType } = await toBase64(frontFile);
       imageBlocks.push({ type: "image", source: { type: "base64", media_type: mediaType, data } });
