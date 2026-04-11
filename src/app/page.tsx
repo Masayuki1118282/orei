@@ -1332,6 +1332,10 @@ export default function LandingPage() {
           borderTop: "1px solid var(--color-border)",
         }}
       >
+        <div className="flex justify-center gap-6 mb-3">
+          <Link href="/privacy" style={{ color: "var(--color-muted)" }}>プライバシーポリシー</Link>
+          <Link href="/tokushoho" style={{ color: "var(--color-muted)" }}>特定商取引法に基づく表記</Link>
+        </div>
         <p>© 2026 OREI. All rights reserved.</p>
       </footer>
     </div>
