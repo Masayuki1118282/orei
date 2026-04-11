@@ -17,6 +17,8 @@ export type Profile = {
   stripe_subscription_id: string | null;
   monthly_usage: number;
   usage_reset_date: string;
+  email_signature: string | null;
+  use_signature: boolean;
   created_at: string;
 };
 
@@ -59,6 +61,13 @@ export type OcrResult = {
   email: string;
   phone: string;
   url: string;
+  memo: string;
+};
+
+// メモタイムラインエントリ
+export type MemoEntry = {
+  date: string;
+  text: string;
 };
 
 // 会社情報型

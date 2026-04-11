@@ -35,12 +35,18 @@ type Props = {
 export default function BusinessCardUploader({ onNext }: Props) {
   const [isMobile] = useState(() => /iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
   const [activeTab, setActiveTab] = useState<"camera" | "manual">("camera");
+  const [cardFaceTab, setCardFaceTab] = useState<"front" | "back">("front");
   const [form, setForm] = useState<ContactForm>(EMPTY_FORM);
   const [ocrLoading, setOcrLoading] = useState(false);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [imageFile, setImageFile] = useState<File | undefined>();
+  const [frontFile, setFrontFile] = useState<File | undefined>();
+  const [backFile, setBackFile] = useState<File | undefined>();
+  const [frontPreviewUrl, setFrontPreviewUrl] = useState<string | null>(null);
+  const [backPreviewUrl, setBackPreviewUrl] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const frontFileInputRef = useRef<HTMLInputElement>(null);
+  const backFileInputRef = useRef<HTMLInputElement>(null);
+  const frontCameraInputRef = useRef<HTMLInputElement>(null);
+  const backCameraInputRef = useRef<HTMLInputElement>(null);
 
   function updateForm(key: keyof ContactForm, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -78,30 +84,44 @@ export default function BusinessCardUploader({ onNext }: Props) {
     });
   }
 
-  async function runOcr(file: File) {
-    setOcrLoading(true);
-    setImageFile(file);
-    setPreviewUrl(URL.createObjectURL(file));
+  async function runOcr(newFrontFile?: File, newBackFile?: File) {
+    const effectiveFront = newFrontFile ?? frontFile;
+    const effectiveBack = newBackFile ?? backFile;
+    if (!effectiveFront && !effectiveBack) return;
 
+    setOcrLoading(true);
     try {
-      const compressed = await compressImage(file);
       const fd = new FormData();
-      fd.append("file", compressed, "image.jpg");
+      if (effectiveFront) {
+        const compressed = await compressImage(effectiveFront);
+        fd.append("frontImage", compressed, "front.jpg");
+      }
+      if (effectiveBack) {
+        const compressed = await compressImage(effectiveBack);
+        fd.append("backImage", compressed, "back.jpg");
+      }
       const res = await fetch("/api/ocr", { method: "POST", body: fd });
       if (!res.ok) throw new Error();
       const data: OcrResult = await res.json();
-      setForm({
-        name: data.name,
-        company: data.company,
-        address: data.address,
-        title: data.title,
-        email: data.email,
-        phone: data.phone,
-        url: data.url,
-        memo: "",
-        location: "",
-        industry: "",
-      });
+
+      if (newFrontFile && !effectiveBack) {
+        // 表面のみ: 全フィールドを更新
+        setForm({
+          name: data.name, company: data.company, address: data.address,
+          title: data.title, email: data.email, phone: data.phone,
+          url: data.url, memo: data.memo ?? "", location: "", industry: "",
+        });
+      } else if (newBackFile && effectiveFront) {
+        // 裏面追加: memoのみ更新
+        setForm((prev) => ({ ...prev, memo: data.memo ?? "" }));
+      } else {
+        // 裏面のみ または 両面同時
+        setForm({
+          name: data.name, company: data.company, address: data.address,
+          title: data.title, email: data.email, phone: data.phone,
+          url: data.url, memo: data.memo ?? "", location: "", industry: "",
+        });
+      }
     } catch {
       toast.error("読み取れませんでした。手動で入力してください");
       setActiveTab("manual");
@@ -110,17 +130,38 @@ export default function BusinessCardUploader({ onNext }: Props) {
     }
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+  function handleFrontFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (file) runOcr(file);
+    if (!file) return;
+    setFrontFile(file);
+    setFrontPreviewUrl(URL.createObjectURL(file));
+    runOcr(file, undefined);
+  }
+
+  function handleBackFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setBackFile(file);
+    setBackPreviewUrl(URL.createObjectURL(file));
+    runOcr(undefined, file);
   }
 
   const handleDrop = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
     const file = e.dataTransfer.files?.[0];
-    if (file && file.type.startsWith("image/")) runOcr(file);
-  }, []);
+    if (!file || !file.type.startsWith("image/")) return;
+    if (cardFaceTab === "front") {
+      setFrontFile(file);
+      setFrontPreviewUrl(URL.createObjectURL(file));
+      runOcr(file, undefined);
+    } else {
+      setBackFile(file);
+      setBackPreviewUrl(URL.createObjectURL(file));
+      runOcr(undefined, file);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cardFaceTab, frontFile, backFile]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -128,9 +169,10 @@ export default function BusinessCardUploader({ onNext }: Props) {
       toast.error("氏名を入力してください");
       return;
     }
-    onNext(form, imageFile);
+    onNext(form, frontFile);
   }
 
+  const currentPreviewUrl = cardFaceTab === "front" ? frontPreviewUrl : backPreviewUrl;
   const showForm = !ocrLoading && (form.name || activeTab === "manual");
 
   return (
@@ -147,12 +189,32 @@ export default function BusinessCardUploader({ onNext }: Props) {
 
         {/* 撮影・アップロードタブ */}
         <TabsContent value="camera">
+          {/* 表面 / 裏面 サブタブ */}
+          <div className="flex rounded-xl overflow-hidden mb-4" style={{ border: "1px solid var(--color-border)" }}>
+            {(["front", "back"] as const).map((face) => (
+              <button
+                key={face}
+                type="button"
+                onClick={() => setCardFaceTab(face)}
+                className="flex-1 py-2 text-sm font-medium transition-colors"
+                style={{
+                  backgroundColor: cardFaceTab === face ? "var(--color-accent)" : "var(--color-surface)",
+                  color: cardFaceTab === face ? "#fff" : "var(--color-muted)",
+                }}
+              >
+                {face === "front" ? "表面" : "裏面"}
+                {face === "front" && frontFile && " ✓"}
+                {face === "back" && backFile && " ✓"}
+              </button>
+            ))}
+          </div>
+
           {/* ドロップゾーン */}
           <div
             onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
             onDragLeave={() => setDragging(false)}
             onDrop={handleDrop}
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => cardFaceTab === "front" ? frontFileInputRef.current?.click() : backFileInputRef.current?.click()}
             className="relative rounded-2xl flex flex-col items-center justify-center cursor-pointer transition-all mb-4"
             style={{
               border: `2px dashed ${dragging ? "var(--color-accent)" : "var(--color-border)"}`,
@@ -161,51 +223,34 @@ export default function BusinessCardUploader({ onNext }: Props) {
               padding: "24px",
             }}
           >
-            {previewUrl ? (
-              <img
-                src={previewUrl}
-                alt="名刺プレビュー"
-                className="max-h-40 rounded-lg object-contain"
-              />
+            {currentPreviewUrl ? (
+              <img src={currentPreviewUrl} alt="名刺プレビュー" className="max-h-40 rounded-lg object-contain" />
             ) : (
               <>
                 <div className="text-3xl mb-2">📷</div>
                 <p className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
-                  名刺をドラッグ＆ドロップ
+                  名刺{cardFaceTab === "front" ? "表面" : "裏面"}をドラッグ＆ドロップ
                 </p>
                 <p className="text-xs mt-1" style={{ color: "var(--color-muted)" }}>
-                  {isMobile
-                    ? "またはタップして選択（JPEG / PNG / HEIC・最大10MB）"
-                    : "スマホで撮影した名刺画像をアップロードしてください"}
+                  {isMobile ? "またはタップして選択" : "スマホで撮影した名刺画像をアップロード"}
                 </p>
               </>
             )}
           </div>
 
-          {/* カメラ起動（モバイル向け） */}
+          {/* ファイル入力（表面） */}
+          <input ref={frontFileInputRef} type="file" accept="image/*" onChange={handleFrontFileChange} className="hidden" />
+          <input ref={frontCameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleFrontFileChange} className="hidden" />
+          {/* ファイル入力（裏面） */}
+          <input ref={backFileInputRef} type="file" accept="image/*" onChange={handleBackFileChange} className="hidden" />
+          <input ref={backCameraInputRef} type="file" accept="image/*" capture="environment" onChange={handleBackFileChange} className="hidden" />
+
           <div className="flex gap-2 mb-6">
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handleFileChange}
-              className="hidden"
-            />
-            {isMobile && (
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleFileChange}
-                className="hidden"
-                id="camera-input"
-              />
-            )}
             {isMobile && (
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => document.getElementById("camera-input")?.click()}
+                onClick={() => cardFaceTab === "front" ? frontCameraInputRef.current?.click() : backCameraInputRef.current?.click()}
                 className="flex-1 h-12 rounded-lg"
                 style={{ borderColor: "var(--color-border)" }}
               >
@@ -215,7 +260,7 @@ export default function BusinessCardUploader({ onNext }: Props) {
             <Button
               type="button"
               variant="outline"
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => cardFaceTab === "front" ? frontFileInputRef.current?.click() : backFileInputRef.current?.click()}
               className={`h-12 rounded-lg ${isMobile ? "flex-1" : "w-full"}`}
               style={{ borderColor: "var(--color-border)" }}
             >
@@ -223,7 +268,6 @@ export default function BusinessCardUploader({ onNext }: Props) {
             </Button>
           </div>
 
-          {/* OCRローディング */}
           {ocrLoading && (
             <div className="space-y-3 mb-4">
               <p className="text-sm font-medium" style={{ color: "var(--color-muted)" }}>
@@ -235,7 +279,6 @@ export default function BusinessCardUploader({ onNext }: Props) {
             </div>
           )}
 
-          {/* OCR結果フォーム */}
           {showForm && activeTab === "camera" && (
             <ContactFormFields form={form} updateForm={updateForm} onSubmit={handleSubmit} />
           )}
@@ -250,7 +293,6 @@ export default function BusinessCardUploader({ onNext }: Props) {
   );
 }
 
-// 共通フォームコンポーネント
 function ContactFormFields({
   form,
   updateForm,
@@ -272,106 +314,48 @@ function ContactFormFields({
         <Label style={{ color: "var(--color-text)" }}>
           氏名 <span style={{ color: "#ef4444" }}>*</span>
         </Label>
-        <Input
-          value={form.name}
-          onChange={(e) => updateForm("name", e.target.value)}
-          placeholder="山田 花子"
-          className="h-12 rounded-lg"
-          style={{ fontSize: "16px" }}
-          required
-        />
+        <Input value={form.name} onChange={(e) => updateForm("name", e.target.value)} placeholder="山田 花子" className="h-12 rounded-lg" style={{ fontSize: "16px" }} required />
       </div>
 
       <div className="space-y-1">
         <Label style={{ color: "var(--color-text)" }}>会社名</Label>
-        <Input
-          value={form.company}
-          onChange={(e) => updateForm("company", e.target.value)}
-          placeholder="株式会社〇〇"
-          className="h-12 rounded-lg"
-          style={{ fontSize: "16px" }}
-        />
+        <Input value={form.company} onChange={(e) => updateForm("company", e.target.value)} placeholder="株式会社〇〇" className="h-12 rounded-lg" style={{ fontSize: "16px" }} />
       </div>
 
       <div className="space-y-1">
         <Label style={{ color: "var(--color-text)" }}>所在地</Label>
-        <Input
-          value={form.address}
-          onChange={(e) => updateForm("address", e.target.value)}
-          placeholder="例: 愛知県一宮市"
-          className="h-12 rounded-lg"
-          style={{ fontSize: "16px" }}
-        />
+        <Input value={form.address} onChange={(e) => updateForm("address", e.target.value)} placeholder="例: 愛知県一宮市" className="h-12 rounded-lg" style={{ fontSize: "16px" }} />
       </div>
 
       <div className="space-y-1">
         <Label style={{ color: "var(--color-text)" }}>役職</Label>
-        <Input
-          value={form.title}
-          onChange={(e) => updateForm("title", e.target.value)}
-          placeholder="営業部長"
-          className="h-12 rounded-lg"
-          style={{ fontSize: "16px" }}
-        />
+        <Input value={form.title} onChange={(e) => updateForm("title", e.target.value)} placeholder="営業部長" className="h-12 rounded-lg" style={{ fontSize: "16px" }} />
       </div>
 
       <div className="space-y-1">
         <Label style={{ color: "var(--color-text)" }}>メールアドレス</Label>
-        <Input
-          value={form.email}
-          onChange={(e) => updateForm("email", e.target.value)}
-          placeholder="hanako@example.com"
-          type="email"
-          className="h-12 rounded-lg"
-          style={{ fontSize: "16px" }}
-        />
+        <Input value={form.email} onChange={(e) => updateForm("email", e.target.value)} placeholder="hanako@example.com" type="email" className="h-12 rounded-lg" style={{ fontSize: "16px" }} />
       </div>
 
       <div className="space-y-1">
         <Label style={{ color: "var(--color-text)" }}>電話番号</Label>
-        <Input
-          value={form.phone}
-          onChange={(e) => updateForm("phone", e.target.value)}
-          placeholder="03-1234-5678"
-          type="tel"
-          className="h-12 rounded-lg"
-          style={{ fontSize: "16px" }}
-        />
+        <Input value={form.phone} onChange={(e) => updateForm("phone", e.target.value)} placeholder="03-1234-5678" type="tel" className="h-12 rounded-lg" style={{ fontSize: "16px" }} />
       </div>
 
       <div className="space-y-1">
         <Label style={{ color: "var(--color-text)" }}>会社URL</Label>
-        <Input
-          value={form.url}
-          onChange={(e) => updateForm("url", e.target.value)}
-          placeholder="https://example.com"
-          type="url"
-          className="h-12 rounded-lg"
-          style={{ fontSize: "16px" }}
-        />
+        <Input value={form.url} onChange={(e) => updateForm("url", e.target.value)} placeholder="https://example.com" type="url" className="h-12 rounded-lg" style={{ fontSize: "16px" }} />
       </div>
 
       {showLocationIndustry && (
         <div className="flex gap-3">
           <div className="space-y-1 flex-1">
             <Label style={{ color: "var(--color-text)" }}>所在地</Label>
-            <Input
-              value={form.location}
-              onChange={(e) => updateForm("location", e.target.value)}
-              placeholder="東京都"
-              className="h-12 rounded-lg"
-              style={{ fontSize: "16px" }}
-            />
+            <Input value={form.location} onChange={(e) => updateForm("location", e.target.value)} placeholder="東京都" className="h-12 rounded-lg" style={{ fontSize: "16px" }} />
           </div>
           <div className="space-y-1 flex-1">
             <Label style={{ color: "var(--color-text)" }}>業種</Label>
-            <Input
-              value={form.industry}
-              onChange={(e) => updateForm("industry", e.target.value)}
-              placeholder="IT・SaaS"
-              className="h-12 rounded-lg"
-              style={{ fontSize: "16px" }}
-            />
+            <Input value={form.industry} onChange={(e) => updateForm("industry", e.target.value)} placeholder="IT・SaaS" className="h-12 rounded-lg" style={{ fontSize: "16px" }} />
           </div>
         </div>
       )}
@@ -388,11 +372,7 @@ function ContactFormFields({
         />
       </div>
 
-      <Button
-        type="submit"
-        className="w-full h-12 rounded-lg font-semibold mt-2"
-        style={{ backgroundColor: "var(--color-primary)", color: "#fff" }}
-      >
+      <Button type="submit" className="w-full h-12 rounded-lg font-semibold mt-2" style={{ backgroundColor: "var(--color-primary)", color: "#fff" }}>
         次へ →
       </Button>
     </form>

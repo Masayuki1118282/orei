@@ -46,6 +46,9 @@ export async function POST(request: Request) {
         console.log("[webhook] planType:", planType);
         console.log("[webhook] subscription id:", session.subscription);
 
+        console.log("[webhook] SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL ? "set" : "MISSING");
+        console.log("[webhook] SERVICE_ROLE_KEY:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "set" : "MISSING");
+
         const { error: updateError } = await serviceClient
           .from("profiles")
           .update({
@@ -55,10 +58,10 @@ export async function POST(request: Request) {
           .eq("id", userId);
 
         if (updateError) {
-          console.error("[webhook] profiles UPDATE 失敗:", updateError);
-          throw updateError;
+          console.error("[webhook] profiles UPDATE 失敗 code:", updateError.code, "message:", updateError.message, "details:", updateError.details);
+        } else {
+          console.log("[webhook] profiles UPDATE 成功 → plan:", planType);
         }
-        console.log("[webhook] profiles UPDATE 成功 → plan:", planType);
         break;
       }
 

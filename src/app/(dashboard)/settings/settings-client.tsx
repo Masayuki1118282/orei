@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Profile, isPaidPlan } from "@/types";
 
@@ -25,6 +26,9 @@ export default function SettingsClient({ profile, userEmail }: Props) {
   const [jobTitle, setJobTitle] = useState(profile?.job_title ?? "");
   const [serviceDescription, setServiceDescription] = useState(profile?.service_description ?? "");
   const [saving, setSaving] = useState(false);
+  const [sigSaving, setSigSaving] = useState(false);
+  const [useSignature, setUseSignature] = useState(profile?.use_signature ?? false);
+  const [emailSignature, setEmailSignature] = useState(profile?.email_signature ?? "");
   const [portalLoading, setPortalLoading] = useState(false);
 
   async function handleSave() {
@@ -40,6 +44,19 @@ export default function SettingsClient({ profile, userEmail }: Props) {
     setSaving(false);
     if (error) { toast.error("保存に失敗しました"); return; }
     toast.success("保存しました");
+  }
+
+  async function handleSaveSignature() {
+    setSigSaving(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { error } = await supabase
+      .from("profiles")
+      .update({ use_signature: useSignature, email_signature: emailSignature || null })
+      .eq("id", user.id);
+    setSigSaving(false);
+    if (error) { toast.error("保存に失敗しました"); return; }
+    toast.success("署名を保存しました");
   }
 
   async function handleLogout() {
@@ -101,6 +118,40 @@ export default function SettingsClient({ profile, userEmail }: Props) {
           </div>
           <Button onClick={handleSave} disabled={saving} className="w-full h-11 rounded-lg mt-4 font-semibold" style={{ backgroundColor: "var(--color-primary)", color: "#fff" }}>
             {saving ? "保存中..." : "保存する"}
+          </Button>
+        </section>
+
+        {/* メール署名 */}
+        <section className="rounded-2xl p-5 shadow-sm" style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+          <h3 className="font-semibold mb-4" style={{ color: "var(--color-text)" }}>メール署名</h3>
+          <div className="flex items-center justify-between mb-3">
+            <Label style={{ color: "var(--color-text)" }}>メールに署名を自動挿入する</Label>
+            <button
+              type="button"
+              onClick={() => setUseSignature((v) => !v)}
+              className="relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none"
+              style={{ backgroundColor: useSignature ? "var(--color-accent)" : "var(--color-border)" }}
+            >
+              <span
+                className="inline-block h-4 w-4 transform rounded-full bg-white transition-transform"
+                style={{ transform: useSignature ? "translateX(22px)" : "translateX(2px)" }}
+              />
+            </button>
+          </div>
+          {useSignature && (
+            <div className="space-y-1 mb-4">
+              <Textarea
+                value={emailSignature}
+                onChange={(e) => setEmailSignature(e.target.value)}
+                placeholder={`株式会社〇〇\n大塚雅之\nTEL: 000-0000-0000\nEmail: xxx@xxx.com`}
+                className="rounded-lg resize-none"
+                rows={5}
+                style={{ fontSize: "16px" }}
+              />
+            </div>
+          )}
+          <Button onClick={handleSaveSignature} disabled={sigSaving} className="w-full h-11 rounded-lg font-semibold" style={{ backgroundColor: "var(--color-primary)", color: "#fff" }}>
+            {sigSaving ? "保存中..." : "保存する"}
           </Button>
         </section>
 

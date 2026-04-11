@@ -46,7 +46,13 @@ async function syncPlanFromStripe(userId: string): Promise<PlanType | null> {
       .update({ plan: newPlan, stripe_subscription_id: sub.id })
       .eq("id", userId);
 
-    console.log("[dashboard/page] syncPlan updated to:", newPlan, "error:", error);
+    if (error) {
+      console.error("[dashboard/page] syncPlan DB UPDATE FAILED:", error.code, error.message);
+      console.error("[dashboard/page] SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL ? "set" : "MISSING");
+      console.error("[dashboard/page] SERVICE_ROLE_KEY:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "set" : "MISSING");
+      return null; // DB更新失敗時はnullを返す（FREEのまま表示して再試行を促す）
+    }
+    console.log("[dashboard/page] syncPlan updated to:", newPlan);
     return newPlan;
   } catch (e) {
     console.error("[dashboard/page] syncPlan error:", e);

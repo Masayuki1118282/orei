@@ -21,7 +21,21 @@ function checkRateLimit(userId: string): boolean {
   return true;
 }
 
-function buildThankYouPrompt(senderInfo: string, recipientInfo: string, hasCompanyInfo: boolean): string {
+// メモJSON → 人間が読める形式に変換
+function formatMemo(memoRaw: string | null): string {
+  if (!memoRaw) return "";
+  try {
+    const entries = JSON.parse(memoRaw);
+    if (Array.isArray(entries)) {
+      return entries.map((e: { date: string; text: string }) => `${e.date}: ${e.text}`).join("\n");
+    }
+    return memoRaw;
+  } catch {
+    return memoRaw;
+  }
+}
+
+function buildThankYouPrompt(senderInfo: string, recipientInfo: string, hasCompanyInfo: boolean, meetingMemo: string): string {
   return `あなたはB2B営業のプロとして、名刺交換後のお礼メールを作成してください。
 
 【送信者情報】
@@ -29,6 +43,7 @@ ${senderInfo}
 
 【受信者情報】
 ${recipientInfo}
+${meetingMemo ? `\n【商談・会話の内容】\n${meetingMemo}\n上記の内容を踏まえて、相手の課題や関心事に自然に触れたメールを生成してください。` : ""}
 
 【作成ルール】
 - 徹底的に「です・ます調＋敬語」
@@ -55,7 +70,7 @@ JSONのみ出力してください（コードブロック・説明文不要）:
 }`;
 }
 
-function buildColdDmPrompt(senderInfo: string, recipientInfo: string, hasCompanyInfo: boolean): string {
+function buildColdDmPrompt(senderInfo: string, recipientInfo: string, hasCompanyInfo: boolean, meetingMemo: string): string {
   return `あなたはB2B営業のプロとして、まだ面識のない見込み客へ送るコールドメール（新規アプローチDM）を作成してください。
 
 【送信者情報】
@@ -63,6 +78,7 @@ ${senderInfo}
 
 【受信者情報】
 ${recipientInfo}
+${meetingMemo ? `\n【商談・会話の内容】\n${meetingMemo}\n上記の内容を踏まえて、相手の課題や関心事に自然に触れたメールを生成してください。` : ""}
 
 【作成ルール】
 - 押し売り感ゼロ・短め（200〜350文字）・読みやすさ重視
@@ -92,14 +108,12 @@ JSONのみ出力してください（コードブロック・説明文不要）:
 
 export async function POST(request: Request) {
   try {
-    // 認証チェック
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // レート制限チェック
     if (!checkRateLimit(user.id)) {
       return NextResponse.json(
         { error: "しばらく待ってから再度お試しください（1分間に5回まで）" },
@@ -107,11 +121,10 @@ export async function POST(request: Request) {
       );
     }
 
-    // プロフィール取得（使用量チェック）
     const serviceClient = createServiceClient();
     const { data: profile } = await serviceClient
       .from("profiles")
-      .select("plan, monthly_usage, usage_reset_date, full_name, company_name, job_title, service_description, industry, proposal_goal, use_case")
+      .select("plan, monthly_usage, usage_reset_date, full_name, company_name, job_title, service_description, industry, proposal_goal, use_case, use_signature, email_signature")
       .eq("id", user.id)
       .single();
 
@@ -119,7 +132,6 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "プロフィールが見つかりません" }, { status: 404 });
     }
 
-    // 月初リセット
     const today = new Date().toISOString().slice(0, 10);
     const resetDate = profile.usage_reset_date;
     let currentUsage = profile.monthly_usage;
@@ -131,7 +143,6 @@ export async function POST(request: Request) {
       currentUsage = 0;
     }
 
-    // 使用量上限チェック
     const limit = PLAN_LIMITS[profile.plan as keyof typeof PLAN_LIMITS] ?? PLAN_LIMITS.free;
     if (currentUsage >= limit) {
       return NextResponse.json(
@@ -140,9 +151,8 @@ export async function POST(request: Request) {
       );
     }
 
-    const { contact } = await request.json();
+    const { contact, meetingMemo = "" } = await request.json();
 
-    // プロンプト組み立て
     const senderInfo = [
       profile.full_name && `送信者名: ${profile.full_name}`,
       profile.company_name && `所属会社: ${profile.company_name}`,
@@ -152,21 +162,22 @@ export async function POST(request: Request) {
       profile.proposal_goal && `提案目的: ${profile.proposal_goal}`,
     ].filter(Boolean).join("\n");
 
+    const memoText = formatMemo(contact.memo);
     const recipientInfo = [
       `宛先氏名: ${contact.name}`,
       contact.company && `宛先会社: ${contact.company}`,
       contact.address && `所在地: ${contact.address}`,
       contact.title && `宛先役職: ${contact.title}`,
       contact.company_description && `会社情報: ${contact.company_description}`,
-      contact.memo && `メモ: ${contact.memo}`,
+      memoText && `メモ: ${memoText}`,
     ].filter(Boolean).join("\n");
 
     const hasCompanyInfo = !!contact.company_description;
     const useCase = profile.use_case ?? "thank_you";
 
     const prompt = useCase === "cold_dm"
-      ? buildColdDmPrompt(senderInfo, recipientInfo, hasCompanyInfo)
-      : buildThankYouPrompt(senderInfo, recipientInfo, hasCompanyInfo);
+      ? buildColdDmPrompt(senderInfo, recipientInfo, hasCompanyInfo, meetingMemo)
+      : buildThankYouPrompt(senderInfo, recipientInfo, hasCompanyInfo, meetingMemo);
 
     const message = await anthropic.messages.create({
       model: MODEL,
@@ -182,13 +193,21 @@ export async function POST(request: Request) {
 
     const result = JSON.parse(jsonMatch[0]);
 
-    // 使用量をインクリメント（生成成功時のみ）
+    // 署名を本文末尾に付加
+    if (profile.use_signature && profile.email_signature?.trim()) {
+      const sig = `\n\n${profile.email_signature.trim()}`;
+      result.bodies = result.bodies.map((b: string) => b + sig);
+      result.followups = result.followups.map((f: { timing: string; body: string }) => ({
+        ...f,
+        body: f.body + sig,
+      }));
+    }
+
     await serviceClient
       .from("profiles")
       .update({ monthly_usage: currentUsage + 1 })
       .eq("id", user.id);
 
-    // メール履歴を保存
     if (contact.id) {
       await serviceClient.from("generated_emails").insert({
         user_id: user.id,

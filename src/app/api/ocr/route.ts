@@ -5,7 +5,6 @@ import { OcrResult } from "@/types";
 
 export async function POST(request: Request) {
   try {
-    // 認証チェック
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -13,14 +12,43 @@ export async function POST(request: Request) {
     }
 
     const formData = await request.formData();
-    const file = formData.get("file") as File | null;
-    if (!file) {
+    const frontFile = (formData.get("frontImage") ?? formData.get("file")) as File | null;
+    const backFile = formData.get("backImage") as File | null;
+
+    if (!frontFile && !backFile) {
       return NextResponse.json({ error: "ファイルが見つかりません" }, { status: 400 });
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const base64 = Buffer.from(arrayBuffer).toString("base64");
-    const mediaType = (file.type || "image/jpeg") as "image/jpeg" | "image/png" | "image/webp" | "image/gif";
+    async function toBase64(file: File) {
+      const buf = await file.arrayBuffer();
+      return {
+        data: Buffer.from(buf).toString("base64"),
+        mediaType: (file.type || "image/jpeg") as "image/jpeg" | "image/png" | "image/webp" | "image/gif",
+      };
+    }
+
+    const imageBlocks: object[] = [];
+    if (frontFile) {
+      const { data, mediaType } = await toBase64(frontFile);
+      imageBlocks.push({ type: "image", source: { type: "base64", media_type: mediaType, data } });
+    }
+    if (backFile) {
+      const { data, mediaType } = await toBase64(backFile);
+      imageBlocks.push({ type: "image", source: { type: "base64", media_type: mediaType, data } });
+    }
+
+    const hasBoth = !!frontFile && !!backFile;
+    const promptText = hasBoth
+      ? `名刺の表面と裏面の画像から情報を統合して抽出してください。裏面に追加情報や手書きメモがある場合もmemoフィールドに含めてください。
+JSONのみ出力してください（コードブロック・説明文は不要）。読み取れなかった項目は空文字""にしてください。
+addressは都道府県＋市区町村のみ（例: "愛知県一宮市"）。
+
+{"name":"","company":"","address":"","title":"","email":"","phone":"","url":"","memo":""}`
+      : `この名刺画像から情報を抽出してください。
+JSONのみ出力してください（コードブロック・説明文は不要）。読み取れなかった項目は空文字""にしてください。
+addressは都道府県＋市区町村のみ（例: "愛知県一宮市"）。
+
+{"name":"","company":"","address":"","title":"","email":"","phone":"","url":"","memo":""}`;
 
     const message = await anthropic.messages.create({
       model: MODEL,
@@ -29,27 +57,14 @@ export async function POST(request: Request) {
         {
           role: "user",
           content: [
-            {
-              type: "image",
-              source: { type: "base64", media_type: mediaType, data: base64 },
-            },
-            {
-              type: "text",
-              text: `この名刺画像から情報を抽出してください。
-JSONのみ出力してください（コードブロック・説明文は不要）。
-読み取れなかった項目は空文字""にしてください。
-addressは名刺に記載の住所から都道府県＋市区町村のみを抽出してください（例: "愛知県一宮市"）。
-
-{"name":"","company":"","address":"","title":"","email":"","phone":"","url":""}`,
-            },
+            ...imageBlocks,
+            { type: "text", text: promptText },
           ],
         },
       ],
     });
 
     const text = message.content[0].type === "text" ? message.content[0].text : "";
-
-    // JSONパース（コードブロックが混入した場合も対応）
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       return NextResponse.json({ error: "読み取れませんでした" }, { status: 422 });
