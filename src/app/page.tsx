@@ -538,6 +538,9 @@ export default function LandingPage() {
           OREI
         </span>
         <div className="flex items-center gap-4">
+          <Link href="/features" className="text-sm hidden sm:block" style={{ color: "var(--color-muted)" }}>
+            機能一覧
+          </Link>
           <Link href="/login" className="text-sm hidden sm:block" style={{ color: "var(--color-muted)" }}>
             ログイン
           </Link>
@@ -990,6 +993,27 @@ export default function LandingPage() {
             </motion.div>
 
           </div>
+
+          {/* 全機能リンク */}
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            whileInView="visible"
+            viewport={VIEWPORT}
+            transition={{ duration: 0.5, ease: EASE }}
+            className="text-center mt-16"
+          >
+            <Link href="/features">
+              <Button
+                variant="outline"
+                className="h-12 px-8 rounded-xl font-semibold text-sm"
+                style={{ borderColor: "var(--color-accent)", color: "var(--color-accent)" }}
+              >
+                全機能を見る
+                <ArrowRight size={16} className="ml-2" />
+              </Button>
+            </Link>
+          </motion.div>
         </div>
       </section>
 
