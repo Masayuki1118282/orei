@@ -44,7 +44,7 @@ async function startTour() {
         popover: {
           title: "まずここから",
           description:
-            "名刺を撮影するか、手動で相手の情報を入力してください。スマホで撮影した写真をアップロードするとOCRで自動入力されます。",
+            "名刺を撮影するか、手動で相手の情報を入力してください。表面・裏面の両方をアップロードすると、情報を統合して自動入力されます。",
           side: "bottom",
           align: "center",
         },
@@ -64,8 +64,18 @@ async function startTour() {
         popover: {
           title: "連絡先をクリックしてメール生成",
           description:
-            "保存した連絡先をクリックすると、件名3案・本文3案・フォローアップが一括で生成されます。",
+            "保存した連絡先をクリックすると詳細ページへ。商談メモを入力してからメール生成すると、その内容を踏まえたパーソナルな文章が生成されます。",
           side: "top",
+          align: "center",
+        },
+      },
+      {
+        element: "#mode-toggle-btn",
+        popover: {
+          title: "2つのモードを切り替え",
+          description:
+            "「挨拶メール」は名刺交換後のお礼メール、「新規アプローチ」はまだ面識のない相手への初回営業メールを生成します。",
+          side: "bottom",
           align: "center",
         },
       },
@@ -238,6 +248,7 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
 
         {/* モード切替 */}
         <div
+          id="mode-toggle-btn"
           className="rounded-2xl p-4 mb-6 shadow-sm flex items-center justify-between"
           style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)" }}
         >
