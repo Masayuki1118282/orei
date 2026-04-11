@@ -33,6 +33,7 @@ export default function EmailGenerator({ contact, onUsageLimitExceeded }: Props)
   const [copiedSubject, setCopiedSubject] = useState(false);
   const [copiedBody, setCopiedBody] = useState(false);
   const [copiedFollowup, setCopiedFollowup] = useState<number | null>(null);
+  const [meetingMemo, setMeetingMemo] = useState("");
 
   async function generate() {
     setLoading(true);
@@ -40,7 +41,7 @@ export default function EmailGenerator({ contact, onUsageLimitExceeded }: Props)
       const res = await fetch("/api/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ contact }),
+        body: JSON.stringify({ contact, meetingMemo }),
       });
 
       if (res.status === 403) {
@@ -126,7 +127,25 @@ export default function EmailGenerator({ contact, onUsageLimitExceeded }: Props)
   // 生成前
   if (!result) {
     return (
-      <div className="mt-6">
+      <div className="mt-6 space-y-3">
+        <div className="space-y-1">
+          <label className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
+            商談・会話の内容（任意）
+          </label>
+          <textarea
+            value={meetingMemo}
+            onChange={(e) => setMeetingMemo(e.target.value)}
+            placeholder="例: 製造業のDX推進に関心あり。来月の展示会でデモを見たいとのこと。"
+            rows={3}
+            className="w-full px-3 py-2 rounded-lg text-sm resize-none"
+            style={{
+              border: "1px solid var(--color-border)",
+              backgroundColor: "var(--color-bg)",
+              color: "var(--color-text)",
+              fontSize: "16px",
+            }}
+          />
+        </div>
         <Button
           onClick={generate}
           className="w-full h-14 rounded-xl font-semibold text-base"
