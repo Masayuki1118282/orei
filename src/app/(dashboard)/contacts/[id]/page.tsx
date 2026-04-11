@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect, notFound } from "next/navigation";
 import ContactDetailClient from "./contact-detail-client";
+import { GeneratedEmail } from "@/types";
 
 export default async function ContactDetailPage({
   params,
@@ -22,5 +23,13 @@ export default async function ContactDetailPage({
 
   if (!contact) notFound();
 
-  return <ContactDetailClient contact={contact} />;
+  const { data: latestEmail } = await supabase
+    .from("generated_emails")
+    .select("*")
+    .eq("contact_id", id)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .single();
+
+  return <ContactDetailClient contact={contact} latestEmail={latestEmail as GeneratedEmail | null} />;
 }

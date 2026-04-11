@@ -12,7 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
-import { Contact } from "@/types";
+import { Contact, GeneratedEmail } from "@/types";
 
 type EmailResult = {
   subjects: string[];
@@ -23,11 +23,16 @@ type EmailResult = {
 
 type Props = {
   contact: Contact;
+  initialEmail: GeneratedEmail | null;
   onUsageLimitExceeded: () => void;
 };
 
-export default function EmailGenerator({ contact, onUsageLimitExceeded }: Props) {
-  const [result, setResult] = useState<EmailResult | null>(null);
+export default function EmailGenerator({ contact, initialEmail, onUsageLimitExceeded }: Props) {
+  const [result, setResult] = useState<EmailResult | null>(
+    initialEmail
+      ? { subjects: initialEmail.subjects, bodies: initialEmail.bodies, followups: initialEmail.followups, remainingUsage: 0 }
+      : null
+  );
   const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [copiedSubject, setCopiedSubject] = useState(false);
@@ -164,9 +169,11 @@ export default function EmailGenerator({ contact, onUsageLimitExceeded }: Props)
         <p className="text-sm font-medium" style={{ color: "var(--color-text)" }}>
           生成完了
         </p>
-        <Badge variant="outline" style={{ borderColor: "var(--color-border)", color: "var(--color-muted)" }}>
-          今月あと {result.remainingUsage} 通使えます
-        </Badge>
+        {result.remainingUsage > 0 && (
+          <Badge variant="outline" style={{ borderColor: "var(--color-border)", color: "var(--color-muted)" }}>
+            今月あと {result.remainingUsage} 通使えます
+          </Badge>
+        )}
       </div>
 
       {/* 案切り替えタブ */}

@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Contact, MemoEntry } from "@/types";
+import { Contact, GeneratedEmail, MemoEntry } from "@/types";
 import UpgradeOfferDialog from "@/components/upgrade-offer-dialog";
 
 function parseMemo(raw: string | null): MemoEntry[] {
@@ -22,9 +22,9 @@ function parseMemo(raw: string | null): MemoEntry[] {
   }
 }
 
-type Props = { contact: Contact };
+type Props = { contact: Contact; latestEmail: GeneratedEmail | null };
 
-export default function ContactDetailClient({ contact: initialContact }: Props) {
+export default function ContactDetailClient({ contact: initialContact, latestEmail }: Props) {
   const router = useRouter();
   const supabase = createClient();
   const [contact, setContact] = useState<Contact>(initialContact);
@@ -182,6 +182,7 @@ export default function ContactDetailClient({ contact: initialContact }: Props) 
         {/* メール生成 */}
         <EmailGenerator
           contact={contact}
+          initialEmail={latestEmail}
           onUsageLimitExceeded={() => setShowUpgrade(true)}
         />
 
