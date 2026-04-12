@@ -32,6 +32,8 @@ import {
   Users,
   BarChart3,
   Timer,
+  Download,
+  Search,
 } from "lucide-react";
 
 // ─── アニメーション定数 ───────────────────────────────────────
@@ -513,6 +515,74 @@ function Feature4Visual() {
   );
 }
 
+function Feature5Visual() {
+  const contacts = [
+    { name: "田中 健一", company: "株式会社サンプル", sent: true },
+    { name: "鈴木 美咲", company: "テック合同会社", sent: false },
+    { name: "山本 浩二", company: "〇〇商事", sent: false },
+  ];
+  return (
+    <div
+      className="rounded-2xl overflow-hidden shadow-md"
+      style={{ border: "1px solid var(--color-border)", backgroundColor: "var(--color-surface)" }}
+    >
+      {/* ツールバー */}
+      <div
+        className="flex items-center justify-between px-4 py-3 gap-2"
+        style={{ borderBottom: "1px solid var(--color-border)", backgroundColor: "#f9fafb" }}
+      >
+        <div
+          className="flex items-center gap-1.5 flex-1 rounded-lg px-2 py-1.5"
+          style={{ backgroundColor: "#fff", border: "1px solid var(--color-border)" }}
+        >
+          <Search size={11} color="var(--color-muted)" />
+          <span className="text-xs" style={{ color: "var(--color-muted)", fontSize: "10px" }}>
+            氏名・会社名で検索…
+          </span>
+        </div>
+        <div
+          className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium flex-shrink-0"
+          style={{ backgroundColor: "#fff", border: "1px solid var(--color-border)", color: "var(--color-muted)", fontSize: "10px" }}
+        >
+          <Download size={10} />
+          CSV
+        </div>
+      </div>
+      {/* 連絡先リスト */}
+      <div className="divide-y" style={{ borderColor: "var(--color-border)" }}>
+        {contacts.map((c, i) => (
+          <div key={i} className="flex items-center gap-3 px-4 py-3">
+            <div
+              className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
+              style={{ backgroundColor: "var(--color-primary)", color: "#fff" }}
+            >
+              {c.name[0]}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold truncate" style={{ color: "var(--color-text)", fontSize: "11px" }}>
+                {c.name}
+              </p>
+              <p className="text-xs truncate" style={{ color: "var(--color-muted)", fontSize: "10px" }}>
+                {c.company}
+              </p>
+            </div>
+            <span
+              className="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0"
+              style={{
+                backgroundColor: c.sent ? "#f0faf5" : "#fef9c3",
+                color: c.sent ? "var(--color-accent)" : "#92400e",
+                fontSize: "9px",
+              }}
+            >
+              {c.sent ? "送信済み ✓" : "未送信"}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // ─── メインコンポーネント ────────────────────────────────────
 export default function LandingPage() {
   // カウントアップ
@@ -990,6 +1060,31 @@ export default function LandingPage() {
               <div className="lg:[direction:ltr]">
                 <Feature4Visual />
               </div>
+            </motion.div>
+
+            {/* 機能5: 連絡先管理 + CSVエクスポート */}
+            <motion.div
+              variants={fadeUp} initial="hidden" whileInView="visible" viewport={VIEWPORT}
+              transition={{ duration: 0.6, ease: EASE }}
+              className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center"
+            >
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-5"
+                  style={{ backgroundColor: "#6366f115", color: "#6366f1" }}>
+                  <Download size={14} />機能
+                </div>
+                <h3 className="font-bold mb-2"
+                  style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)", fontSize: "26px" }}>
+                  連絡先管理 &amp; CSVエクスポート
+                </h3>
+                <p className="font-medium mb-3 leading-relaxed" style={{ color: "var(--color-text)" }}>
+                  名刺データを手元にいつでも。
+                </p>
+                <p className="text-sm leading-relaxed" style={{ color: "var(--color-muted)" }}>
+                  登録した連絡先を氏名・会社名・登録日でソートし、キーワード検索で素早く絞り込み。CSVでエクスポートすればExcel・スプレッドシートでそのまま活用できます。文字化けなし。
+                </p>
+              </div>
+              <Feature5Visual />
             </motion.div>
 
           </div>

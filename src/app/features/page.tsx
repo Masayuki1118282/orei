@@ -10,7 +10,6 @@ import {
   BookOpen,
   Settings,
   ArrowRight,
-  CheckCircle2,
   Camera,
   FlipHorizontal,
   PenLine,
@@ -27,6 +26,8 @@ import {
   Signature,
   StickyNote,
   ListChecks,
+  Download,
+  Search,
 } from "lucide-react";
 
 const fadeUp = { hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } };
@@ -142,6 +143,18 @@ const CATEGORIES: Category[] = [
         icon: LayoutList,
         title: "名刺情報の保存・一覧表示",
         desc: "登録した連絡先を一覧で管理。会社名・氏名・送信済みステータスを一目で確認。",
+      },
+      {
+        icon: Search,
+        title: "キーワード検索 & ソート",
+        desc: "氏名・会社名・役職・メールでリアルタイム検索。登録日・会社名・氏名の昇順/降順で並び替え可能。",
+        badge: "NEW",
+      },
+      {
+        icon: Download,
+        title: "CSVエクスポート",
+        desc: "連絡先データ（氏名・会社名・役職・メール・電話・URL・登録日）をCSVでダウンロード。ExcelやGoogleスプレッドシートで文字化けなしで開けます。",
+        badge: "NEW",
       },
       {
         icon: StickyNote,
@@ -290,7 +303,7 @@ export default function FeaturesPage() {
       </section>
 
       {/* カテゴリ別機能リスト */}
-      <section className="px-6 pb-24" style={{ backgroundColor: "var(--color-bg)" }}>
+      <section className="px-6 pt-10 pb-24" style={{ backgroundColor: "var(--color-bg)" }}>
         <div className="max-w-4xl mx-auto space-y-16">
           {CATEGORIES.map((cat, ci) => (
             <motion.div
@@ -301,18 +314,22 @@ export default function FeaturesPage() {
               whileInView="visible"
               viewport={VIEWPORT}
               transition={{ duration: 0.5, ease: EASE, delay: ci * 0.05 }}
+              className="scroll-mt-24"
             >
               {/* カテゴリ見出し */}
-              <div className="flex items-center gap-3 mb-6">
+              <div
+                className="flex items-center gap-3 mb-6 px-4 py-3 rounded-2xl"
+                style={{ backgroundColor: cat.bg, border: `1px solid ${cat.color}20` }}
+              >
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                  style={{ backgroundColor: cat.bg }}
+                  style={{ backgroundColor: `${cat.color}25` }}
                 >
                   <cat.icon size={20} color={cat.color} strokeWidth={1.8} />
                 </div>
                 <h2
                   className="font-bold"
-                  style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)", fontSize: "22px" }}
+                  style={{ fontFamily: "var(--font-heading)", color: cat.color, fontSize: "20px" }}
                 >
                   {cat.label}
                 </h2>
@@ -328,7 +345,7 @@ export default function FeaturesPage() {
                     whileInView="visible"
                     viewport={VIEWPORT}
                     transition={{ duration: 0.45, ease: EASE, delay: fi * 0.08 }}
-                    className="rounded-2xl p-5 flex gap-4"
+                    className="rounded-2xl p-5 flex gap-4 transition-shadow hover:shadow-md"
                     style={{
                       backgroundColor: "var(--color-surface)",
                       border: "1px solid var(--color-border)",
@@ -341,7 +358,7 @@ export default function FeaturesPage() {
                       <feat.icon size={17} color={cat.color} strokeWidth={1.8} />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                         <p className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>
                           {feat.title}
                         </p>
