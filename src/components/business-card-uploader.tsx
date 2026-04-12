@@ -12,24 +12,72 @@ import { OcrResult } from "@/types";
 
 // ── QRコード読み取り ────────────────────────────────────────
 async function scanQrCode(file: File): Promise<string | null> {
+  // 1) BarcodeDetector（iOS 17+ / Chrome Android）— EXIF・角度・実写真に強い
+  if (typeof window !== "undefined" && "BarcodeDetector" in window) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const detector = new (window as any).BarcodeDetector({ formats: ["qr_code"] });
+      const bitmap = await createImageBitmap(file);
+      const codes: { rawValue: string }[] = await detector.detect(bitmap);
+      bitmap.close();
+      if (codes.length > 0) return codes[0].rawValue;
+    } catch {
+      // BarcodeDetector 失敗 → jsQR にフォールバック
+    }
+  }
+
+  // 2) jsQR フォールバック（複数スケール＋4方向回転）
   try {
     const jsQR = (await import("jsqr")).default;
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d")!;
     const img = new Image();
-    const url = URL.createObjectURL(file);
+    const objectUrl = URL.createObjectURL(file);
     await new Promise<void>((resolve, reject) => {
       img.onload = () => resolve();
       img.onerror = reject;
-      img.src = url;
+      img.src = objectUrl;
     });
-    URL.revokeObjectURL(url);
-    canvas.width = img.width;
-    canvas.height = img.height;
-    ctx.drawImage(img, 0, 0);
-    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const result = jsQR(imageData.data, canvas.width, canvas.height);
-    return result?.data ?? null;
+    URL.revokeObjectURL(objectUrl);
+
+    function tryScan(w: number, h: number, draw: () => void) {
+      canvas.width = w;
+      canvas.height = h;
+      ctx.clearRect(0, 0, w, h);
+      draw();
+      return jsQR(ctx.getImageData(0, 0, w, h).data, w, h, { inversionAttempts: "attemptBoth" });
+    }
+
+    // 元サイズ
+    let result = tryScan(img.width, img.height, () => ctx.drawImage(img, 0, 0));
+    if (result) return result.data;
+
+    // 長辺 1600px に縮小
+    const maxSide = 1600;
+    if (Math.max(img.width, img.height) > maxSide) {
+      const scale = maxSide / Math.max(img.width, img.height);
+      const w2 = Math.round(img.width * scale);
+      const h2 = Math.round(img.height * scale);
+      result = tryScan(w2, h2, () => ctx.drawImage(img, 0, 0, w2, h2));
+      if (result) return result.data;
+    }
+
+    // 90° / 180° / 270° 回転（EXIF 未適用の保険）
+    for (const angle of [Math.PI / 2, Math.PI, (3 * Math.PI) / 2]) {
+      const swap = angle === Math.PI / 2 || angle === (3 * Math.PI) / 2;
+      const rw = swap ? img.height : img.width;
+      const rh = swap ? img.width : img.height;
+      result = tryScan(rw, rh, () => {
+        ctx.save();
+        ctx.translate(rw / 2, rh / 2);
+        ctx.rotate(angle);
+        ctx.drawImage(img, -img.width / 2, -img.height / 2);
+        ctx.restore();
+      });
+      if (result) return result.data;
+    }
+
+    return null;
   } catch {
     return null;
   }
@@ -99,6 +147,7 @@ export default function BusinessCardUploader({ onNext }: Props) {
   const [cardFaceTab, setCardFaceTab] = useState<"front" | "back">("front");
   const [form, setForm] = useState<ContactForm>(EMPTY_FORM);
   const [ocrLoading, setOcrLoading] = useState(false);
+  const [scanPending, setScanPending] = useState(false);
   const [frontFile, setFrontFile] = useState<File | undefined>();
   const [backFile, setBackFile] = useState<File | undefined>();
   const [frontPreviewUrl, setFrontPreviewUrl] = useState<string | null>(null);
@@ -145,91 +194,52 @@ export default function BusinessCardUploader({ onNext }: Props) {
     });
   }
 
-  async function runOcr(newFrontFile?: File, newBackFile?: File) {
-    const effectiveFront = newFrontFile ?? frontFile;
-    const effectiveBack = newBackFile ?? backFile;
-    if (!effectiveFront && !effectiveBack) return;
-
+  async function runOcr() {
+    if (!frontFile && !backFile) return;
+    setScanPending(false);
     setOcrLoading(true);
     try {
-      // OCR と QRスキャンを並行実行
       const fd = new FormData();
-      if (effectiveFront) {
-        const compressed = await compressImage(effectiveFront);
+      if (frontFile) {
+        const compressed = await compressImage(frontFile);
         fd.append("frontImage", compressed, "front.jpg");
       }
-      if (effectiveBack) {
-        const compressed = await compressImage(effectiveBack);
+      if (backFile) {
+        const compressed = await compressImage(backFile);
         fd.append("backImage", compressed, "back.jpg");
       }
 
-      const scanTarget = newFrontFile ?? newBackFile; // 今回追加された画像をQRスキャン対象に
-      const [ocrRes, qrRaw] = await Promise.all([
+      // OCR と QRスキャン（表裏両方）を並行実行
+      const [ocrRes, qrFront, qrBack] = await Promise.all([
         fetch("/api/ocr", { method: "POST", body: fd }),
-        scanTarget ? scanQrCode(scanTarget) : Promise.resolve(null),
+        frontFile ? scanQrCode(frontFile) : Promise.resolve(null),
+        backFile ? scanQrCode(backFile) : Promise.resolve(null),
       ]);
       if (!ocrRes.ok) throw new Error();
       const data: OcrResult = await ocrRes.json();
 
-      // QR解析
+      const qrRaw = qrFront ?? qrBack;
       const qrParsed = qrRaw ? parseQrContent(qrRaw) : null;
 
-      if (newFrontFile && !effectiveBack) {
-        // 表面のみ: OCR結果をベースにQRで補完・上書き
-        const base: ContactForm = {
-          name: data.name, company: data.company, address: data.address,
-          title: data.title, email: data.email, phone: data.phone,
-          url: data.url, memo: data.memo ?? "", location: "", industry: "",
-        };
-        if (qrParsed?.type === "vcard") {
-          const f = qrParsed.fill;
-          if (f.name) base.name = f.name;
-          if (f.company) base.company = f.company;
-          if (f.title) base.title = f.title;
-          if (f.email) base.email = f.email;
-          if (f.phone) base.phone = f.phone;
-          if (f.url) base.url = f.url;
-          toast.success("QRコードを読み取り、連絡先情報を補完しました");
-        } else if (qrParsed?.type === "url") {
-          base.url = qrParsed.url;
-          toast.success("QRコードからURLを取得しました");
-        }
-        setForm(base);
-      } else if (newBackFile && effectiveFront) {
-        // 裏面追加: memoのみ更新（QRがあればURLやemailも補完）
-        setForm((prev) => {
-          const next = { ...prev, memo: data.memo ?? "" };
-          if (qrParsed?.type === "vcard") {
-            const f = qrParsed.fill;
-            if (f.email && !prev.email) next.email = f.email;
-            if (f.url && !prev.url) next.url = f.url;
-            if (f.phone && !prev.phone) next.phone = f.phone;
-          } else if (qrParsed?.type === "url" && !prev.url) {
-            next.url = qrParsed.url;
-          }
-          return next;
-        });
-      } else {
-        // 裏面のみ または 両面同時
-        const base: ContactForm = {
-          name: data.name, company: data.company, address: data.address,
-          title: data.title, email: data.email, phone: data.phone,
-          url: data.url, memo: data.memo ?? "", location: "", industry: "",
-        };
-        if (qrParsed?.type === "vcard") {
-          const f = qrParsed.fill;
-          if (f.name) base.name = f.name;
-          if (f.company) base.company = f.company;
-          if (f.title) base.title = f.title;
-          if (f.email) base.email = f.email;
-          if (f.phone) base.phone = f.phone;
-          if (f.url) base.url = f.url;
-          toast.success("QRコードを読み取り、連絡先情報を補完しました");
-        } else if (qrParsed?.type === "url") {
-          base.url = qrParsed.url;
-        }
-        setForm(base);
+      const base: ContactForm = {
+        name: data.name, company: data.company, address: data.address,
+        title: data.title, email: data.email, phone: data.phone,
+        url: data.url, memo: data.memo ?? "", location: "", industry: "",
+      };
+      if (qrParsed?.type === "vcard") {
+        const f = qrParsed.fill;
+        if (f.name) base.name = f.name;
+        if (f.company) base.company = f.company;
+        if (f.title) base.title = f.title;
+        if (f.email) base.email = f.email;
+        if (f.phone) base.phone = f.phone;
+        if (f.url) base.url = f.url;
+        toast.success("QRコードを読み取り、連絡先情報を補完しました");
+      } else if (qrParsed?.type === "url") {
+        base.url = qrParsed.url;
+        toast.success("QRコードからURLを取得しました");
       }
+      setForm(base);
     } catch {
       toast.error("読み取れませんでした。手動で入力してください");
       setActiveTab("manual");
@@ -243,7 +253,8 @@ export default function BusinessCardUploader({ onNext }: Props) {
     if (!file) return;
     setFrontFile(file);
     setFrontPreviewUrl(URL.createObjectURL(file));
-    runOcr(file, undefined);
+    setScanPending(true);
+    setForm(EMPTY_FORM);
   }
 
   function handleBackFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -251,7 +262,7 @@ export default function BusinessCardUploader({ onNext }: Props) {
     if (!file) return;
     setBackFile(file);
     setBackPreviewUrl(URL.createObjectURL(file));
-    runOcr(undefined, file);
+    setScanPending(true);
   }
 
   const handleDrop = useCallback((e: React.DragEvent) => {
@@ -262,14 +273,14 @@ export default function BusinessCardUploader({ onNext }: Props) {
     if (cardFaceTab === "front") {
       setFrontFile(file);
       setFrontPreviewUrl(URL.createObjectURL(file));
-      runOcr(file, undefined);
+      setForm(EMPTY_FORM);
     } else {
       setBackFile(file);
       setBackPreviewUrl(URL.createObjectURL(file));
-      runOcr(undefined, file);
     }
+    setScanPending(true);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cardFaceTab, frontFile, backFile]);
+  }, [cardFaceTab]);
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -281,7 +292,9 @@ export default function BusinessCardUploader({ onNext }: Props) {
   }
 
   const currentPreviewUrl = cardFaceTab === "front" ? frontPreviewUrl : backPreviewUrl;
-  const showForm = !ocrLoading && (form.name || activeTab === "manual");
+  const showScanButton = scanPending && !ocrLoading;
+  const showBackHint = showScanButton && !!frontFile && !backFile;
+  const showForm = !ocrLoading && !scanPending && (!!form.name || activeTab === "manual");
 
   return (
     <div className="w-full max-w-lg mx-auto">
@@ -375,6 +388,25 @@ export default function BusinessCardUploader({ onNext }: Props) {
               🖼️ 画像を選択
             </Button>
           </div>
+
+          {/* 読み取りボタン + ヒント */}
+          {showScanButton && (
+            <div className="mb-4">
+              {showBackHint && (
+                <p className="text-xs mb-3 px-1 leading-relaxed" style={{ color: "var(--color-muted)" }}>
+                  このまま読み取れます。裏面もある場合は「裏面」タブからアップロードすると、より多くの情報を取得できます。表面のみの場合はそのまま読み取りを進めてください。
+                </p>
+              )}
+              <Button
+                type="button"
+                onClick={runOcr}
+                className="w-full h-12 rounded-lg font-semibold"
+                style={{ backgroundColor: "var(--color-accent)", color: "#fff" }}
+              >
+                名刺を読み取る
+              </Button>
+            </div>
+          )}
 
           {ocrLoading && (
             <div className="space-y-3 mb-4">

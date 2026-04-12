@@ -136,7 +136,7 @@ export default function ContactDetailClient({ contact: initialContact, latestEma
               type="text"
               value={newMemoText}
               onChange={(e) => setNewMemoText(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAddMemo(); } }}
+              onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); handleAddMemo(); } }}
               placeholder="メモを追加..."
               className="flex-1 h-10 px-3 rounded-lg text-sm"
               style={{

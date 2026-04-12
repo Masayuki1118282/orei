@@ -123,7 +123,7 @@ export default function EditContactPage() {
       </header>
 
       <main className="px-4 py-6 max-w-lg mx-auto">
-        <form onSubmit={handleSave} className="space-y-4">
+        <form onSubmit={handleSave} onKeyDown={(e) => { if (e.key === "Enter" && e.nativeEvent.isComposing) e.preventDefault(); }} className="space-y-4">
           <div className="space-y-1">
             <Label style={{ color: "var(--color-text)" }}>
               氏名 <span style={{ color: "#ef4444" }}>*</span>
