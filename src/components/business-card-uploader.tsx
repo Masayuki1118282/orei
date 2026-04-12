@@ -10,6 +10,67 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { OcrResult } from "@/types";
 
+// ── QRコード読み取り ────────────────────────────────────────
+async function scanQrCode(file: File): Promise<string | null> {
+  try {
+    const jsQR = (await import("jsqr")).default;
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d")!;
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = reject;
+      img.src = url;
+    });
+    URL.revokeObjectURL(url);
+    canvas.width = img.width;
+    canvas.height = img.height;
+    ctx.drawImage(img, 0, 0);
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const result = jsQR(imageData.data, canvas.width, canvas.height);
+    return result?.data ?? null;
+  } catch {
+    return null;
+  }
+}
+
+// ── vCard パーサー ──────────────────────────────────────────
+type QrFill = Partial<Pick<ContactForm, "name" | "company" | "title" | "email" | "phone" | "url">>;
+
+function parseVCard(raw: string): QrFill {
+  const lines = raw.replace(/\r\n/g, "\n").replace(/\r/g, "\n").split("\n");
+  const get = (prefix: string) =>
+    lines.find((l) => l.toUpperCase().startsWith(prefix))?.split(":").slice(1).join(":").trim() ?? "";
+
+  // N:姓;名;;; → "姓 名"
+  const nLine = get("N:");
+  const nameParts = nLine ? nLine.split(";").filter(Boolean) : [];
+  const nameFromN = nameParts.length >= 2 ? `${nameParts[0]} ${nameParts[1]}` : nameParts[0] ?? "";
+  const nameFromFN = get("FN:");
+  const name = (nameFromFN || nameFromN).trim();
+
+  return {
+    name: name || undefined,
+    company: get("ORG:") || undefined,
+    title: get("TITLE:") || undefined,
+    email: get("EMAIL") || undefined,   // EMAIL;TYPE=... にも対応
+    phone: get("TEL") || undefined,     // TEL;TYPE=... にも対応
+    url: get("URL:") || undefined,
+  };
+}
+
+function parseQrContent(raw: string): { type: "vcard"; fill: QrFill } | { type: "url"; url: string } | null {
+  const trimmed = raw.trim();
+  if (trimmed.toUpperCase().includes("BEGIN:VCARD")) {
+    return { type: "vcard", fill: parseVCard(trimmed) };
+  }
+  if (/^https?:\/\//i.test(trimmed)) {
+    return { type: "url", url: trimmed };
+  }
+  return null;
+}
+
 type ContactForm = {
   name: string;
   company: string;
@@ -91,6 +152,7 @@ export default function BusinessCardUploader({ onNext }: Props) {
 
     setOcrLoading(true);
     try {
+      // OCR と QRスキャンを並行実行
       const fd = new FormData();
       if (effectiveFront) {
         const compressed = await compressImage(effectiveFront);
@@ -100,27 +162,73 @@ export default function BusinessCardUploader({ onNext }: Props) {
         const compressed = await compressImage(effectiveBack);
         fd.append("backImage", compressed, "back.jpg");
       }
-      const res = await fetch("/api/ocr", { method: "POST", body: fd });
-      if (!res.ok) throw new Error();
-      const data: OcrResult = await res.json();
+
+      const scanTarget = newFrontFile ?? newBackFile; // 今回追加された画像をQRスキャン対象に
+      const [ocrRes, qrRaw] = await Promise.all([
+        fetch("/api/ocr", { method: "POST", body: fd }),
+        scanTarget ? scanQrCode(scanTarget) : Promise.resolve(null),
+      ]);
+      if (!ocrRes.ok) throw new Error();
+      const data: OcrResult = await ocrRes.json();
+
+      // QR解析
+      const qrParsed = qrRaw ? parseQrContent(qrRaw) : null;
 
       if (newFrontFile && !effectiveBack) {
-        // 表面のみ: 全フィールドを更新
-        setForm({
+        // 表面のみ: OCR結果をベースにQRで補完・上書き
+        const base: ContactForm = {
           name: data.name, company: data.company, address: data.address,
           title: data.title, email: data.email, phone: data.phone,
           url: data.url, memo: data.memo ?? "", location: "", industry: "",
-        });
+        };
+        if (qrParsed?.type === "vcard") {
+          const f = qrParsed.fill;
+          if (f.name) base.name = f.name;
+          if (f.company) base.company = f.company;
+          if (f.title) base.title = f.title;
+          if (f.email) base.email = f.email;
+          if (f.phone) base.phone = f.phone;
+          if (f.url) base.url = f.url;
+          toast.success("QRコードを読み取り、連絡先情報を補完しました");
+        } else if (qrParsed?.type === "url") {
+          base.url = qrParsed.url;
+          toast.success("QRコードからURLを取得しました");
+        }
+        setForm(base);
       } else if (newBackFile && effectiveFront) {
-        // 裏面追加: memoのみ更新
-        setForm((prev) => ({ ...prev, memo: data.memo ?? "" }));
+        // 裏面追加: memoのみ更新（QRがあればURLやemailも補完）
+        setForm((prev) => {
+          const next = { ...prev, memo: data.memo ?? "" };
+          if (qrParsed?.type === "vcard") {
+            const f = qrParsed.fill;
+            if (f.email && !prev.email) next.email = f.email;
+            if (f.url && !prev.url) next.url = f.url;
+            if (f.phone && !prev.phone) next.phone = f.phone;
+          } else if (qrParsed?.type === "url" && !prev.url) {
+            next.url = qrParsed.url;
+          }
+          return next;
+        });
       } else {
         // 裏面のみ または 両面同時
-        setForm({
+        const base: ContactForm = {
           name: data.name, company: data.company, address: data.address,
           title: data.title, email: data.email, phone: data.phone,
           url: data.url, memo: data.memo ?? "", location: "", industry: "",
-        });
+        };
+        if (qrParsed?.type === "vcard") {
+          const f = qrParsed.fill;
+          if (f.name) base.name = f.name;
+          if (f.company) base.company = f.company;
+          if (f.title) base.title = f.title;
+          if (f.email) base.email = f.email;
+          if (f.phone) base.phone = f.phone;
+          if (f.url) base.url = f.url;
+          toast.success("QRコードを読み取り、連絡先情報を補完しました");
+        } else if (qrParsed?.type === "url") {
+          base.url = qrParsed.url;
+        }
+        setForm(base);
       }
     } catch {
       toast.error("読み取れませんでした。手動で入力してください");
