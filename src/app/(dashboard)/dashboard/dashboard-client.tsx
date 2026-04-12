@@ -103,6 +103,7 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
   const [searchQuery, setSearchQuery] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("created_at");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [sentFilter, setSentFilter] = useState<"all" | "unsent" | "sent">("all");
   const [modeChanging, setModeChanging] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(() => {
     if (tutorialCompleted) return false;
@@ -213,6 +214,9 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
         )
       : contacts;
 
+    if (sentFilter === "unsent") result = result.filter((c) => !c.is_sent);
+    else if (sentFilter === "sent") result = result.filter((c) => c.is_sent);
+
     result = [...result].sort((a, b) => {
       let aVal = "";
       let bVal = "";
@@ -231,7 +235,7 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
     });
 
     return result;
-  }, [contacts, searchQuery, sortKey, sortDir]);
+  }, [contacts, searchQuery, sortKey, sortDir, sentFilter]);
 
   const sentContacts = filteredContacts.filter((c) => c.is_sent);
   const unsentContacts = filteredContacts.filter((c) => !c.is_sent);
@@ -381,6 +385,29 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
                 }}
               />
             </div>
+            {/* 送信フィルタータブ */}
+            <div className="flex items-center gap-1.5">
+              {(
+                [
+                  { key: "all", label: `全て (${contacts.length})` },
+                  { key: "unsent", label: `未送信 (${contacts.filter((c) => !c.is_sent).length})` },
+                  { key: "sent", label: `送信済み (${contacts.filter((c) => c.is_sent).length})` },
+                ] as { key: "all" | "unsent" | "sent"; label: string }[]
+              ).map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => setSentFilter(key)}
+                  className="px-3 py-1 rounded-full text-xs font-medium transition-all"
+                  style={{
+                    backgroundColor: sentFilter === key ? "var(--color-primary)" : "var(--color-surface)",
+                    color: sentFilter === key ? "#fff" : "var(--color-muted)",
+                    border: `1px solid ${sentFilter === key ? "var(--color-primary)" : "var(--color-border)"}`,
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
             {/* ソートボタン + CSVエクスポート */}
             <div className="flex items-center gap-2 flex-wrap justify-between">
               <div className="flex items-center gap-2 flex-wrap">
@@ -452,52 +479,72 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
           </div>
         ) : (
           <>
-            {/* 未送信 */}
-            {unsentContacts.length > 0 && (
-              <section className="mb-6">
-                <p className="text-xs font-medium mb-3" style={{ color: "var(--color-muted)" }}>
-                  未送信 ({unsentContacts.length})
-                </p>
-                <div className="space-y-3">
-                  {unsentContacts.map((contact) => (
-                    <div key={contact.id} className="relative group">
-                      <ContactCard contact={contact} onToggleSent={handleToggleSent} />
-                      <button
-                        onClick={() => handleDelete(contact.id)}
-                        className="absolute top-3 right-32 text-xs opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded"
-                        style={{ color: "#ef4444" }}
-                      >
-                        削除
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* 送信済み */}
-            {sentContacts.length > 0 && (
-              <>
-                {unsentContacts.length > 0 && <Separator className="mb-6" />}
-                <section>
-                  <p className="text-xs font-medium mb-3" style={{ color: "var(--color-muted)" }}>
-                    送信済み ({sentContacts.length})
-                  </p>
-                  <div className="space-y-3">
-                    {sentContacts.map((contact) => (
-                      <div key={contact.id} className="relative group">
-                        <ContactCard contact={contact} onToggleSent={handleToggleSent} />
-                        <button
-                          onClick={() => handleDelete(contact.id)}
-                          className="absolute top-3 right-32 text-xs sm:opacity-0 sm:group-hover:opacity-100 transition-opacity px-2 py-1 rounded"
-                          style={{ color: "#ef4444" }}
-                        >
-                          削除
-                        </button>
-                      </div>
-                    ))}
+            {sentFilter === "all" ? (
+              /* 全て表示 — セクション分けなし */
+              <div className="space-y-3">
+                {filteredContacts.map((contact) => (
+                  <div key={contact.id} className="relative group">
+                    <ContactCard contact={contact} onToggleSent={handleToggleSent} />
+                    <button
+                      onClick={() => handleDelete(contact.id)}
+                      className="absolute top-3 right-32 text-xs opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded"
+                      style={{ color: "#ef4444" }}
+                    >
+                      削除
+                    </button>
                   </div>
-                </section>
+                ))}
+              </div>
+            ) : (
+              <>
+                {/* 未送信 */}
+                {unsentContacts.length > 0 && (
+                  <section className="mb-6">
+                    <p className="text-xs font-medium mb-3" style={{ color: "var(--color-muted)" }}>
+                      未送信 ({unsentContacts.length})
+                    </p>
+                    <div className="space-y-3">
+                      {unsentContacts.map((contact) => (
+                        <div key={contact.id} className="relative group">
+                          <ContactCard contact={contact} onToggleSent={handleToggleSent} />
+                          <button
+                            onClick={() => handleDelete(contact.id)}
+                            className="absolute top-3 right-32 text-xs opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded"
+                            style={{ color: "#ef4444" }}
+                          >
+                            削除
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                )}
+
+                {/* 送信済み */}
+                {sentContacts.length > 0 && (
+                  <>
+                    {unsentContacts.length > 0 && <Separator className="mb-6" />}
+                    <section>
+                      <p className="text-xs font-medium mb-3" style={{ color: "var(--color-muted)" }}>
+                        送信済み ({sentContacts.length})
+                      </p>
+                      <div className="space-y-3">
+                        {sentContacts.map((contact) => (
+                          <div key={contact.id} className="relative group">
+                            <ContactCard contact={contact} onToggleSent={handleToggleSent} />
+                            <button
+                              onClick={() => handleDelete(contact.id)}
+                              className="absolute top-3 right-32 text-xs sm:opacity-0 sm:group-hover:opacity-100 transition-opacity px-2 py-1 rounded"
+                              style={{ color: "#ef4444" }}
+                            >
+                              削除
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  </>
+                )}
               </>
             )}
           </>
