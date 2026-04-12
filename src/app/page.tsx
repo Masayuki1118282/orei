@@ -556,8 +556,8 @@ export default function LandingPage() {
       </header>
 
       {/* ━━━ ① Hero ━━━ */}
-      <section className="px-6 pt-28 pb-32" style={{ backgroundColor: "#fff" }}>
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+      <section className="px-6 pt-16 sm:pt-24 pb-16 sm:pb-28" style={{ backgroundColor: "#fff" }}>
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
           {/* テキスト */}
           <div>
             <motion.div
@@ -593,7 +593,7 @@ export default function LandingPage() {
               animate="visible"
               transition={{ duration: 0.6, ease: EASE, delay: 0.15 }}
               className="mb-10"
-              style={{ color: "var(--color-muted)", fontSize: "18px", lineHeight: 1.8, maxWidth: "480px" }}
+              style={{ color: "var(--color-muted)", fontSize: "clamp(15px, 2vw, 18px)", lineHeight: 1.8, maxWidth: "480px" }}
             >
               名刺を撮影するだけ。相手の会社・事業内容をAIが自動で調べ、
               押し売り感ゼロの丁寧なお礼メールを生成します。
@@ -631,7 +631,7 @@ export default function LandingPage() {
       </section>
 
       {/* ━━━ ② 数字で見る課題 ━━━ */}
-      <section className="px-6 py-28" style={{ backgroundColor: "var(--color-primary)" }}>
+      <section className="px-6 py-16 lg:py-28" style={{ backgroundColor: "var(--color-primary)" }}>
         <div className="max-w-6xl mx-auto">
           <motion.p
             variants={fadeUp}
@@ -639,12 +639,12 @@ export default function LandingPage() {
             whileInView="visible"
             viewport={VIEWPORT}
             transition={{ duration: 0.6, ease: EASE }}
-            className="text-center text-sm font-semibold mb-16 tracking-widest uppercase"
+            className="text-center text-sm font-semibold mb-10 lg:mb-16 tracking-widest uppercase"
             style={{ color: "rgba(255,255,255,0.5)" }}
           >
             Why OREI
           </motion.p>
-          <div className="grid sm:grid-cols-3 gap-12 text-center">
+          <div className="grid sm:grid-cols-3 gap-8 sm:gap-12 text-center">
             {/* 97% */}
             <motion.div
               variants={fadeUp}
@@ -658,7 +658,7 @@ export default function LandingPage() {
               </div>
               <div
                 className="font-bold leading-none mb-3"
-                style={{ fontSize: "72px", fontFamily: "var(--font-heading)", color: "#fff" }}
+                style={{ fontSize: "clamp(48px, 8vw, 72px)", fontFamily: "var(--font-heading)", color: "#fff" }}
               >
                 <span ref={count97.ref}>{count97.display}</span>%
               </div>
@@ -679,7 +679,7 @@ export default function LandingPage() {
               </div>
               <div
                 className="font-bold leading-none mb-3"
-                style={{ fontSize: "72px", fontFamily: "var(--font-heading)", color: "#fff" }}
+                style={{ fontSize: "clamp(48px, 8vw, 72px)", fontFamily: "var(--font-heading)", color: "#fff" }}
               >
                 <span ref={count24.ref}>{count24.display}</span>h
               </div>
@@ -700,7 +700,7 @@ export default function LandingPage() {
               </div>
               <div
                 className="font-bold leading-none mb-3"
-                style={{ fontSize: "72px", fontFamily: "var(--font-heading)", color: "var(--color-accent)" }}
+                style={{ fontSize: "clamp(48px, 8vw, 72px)", fontFamily: "var(--font-heading)", color: "var(--color-accent)" }}
               >
                 <span ref={count3.ref}>{count3.display}</span>秒
               </div>
@@ -713,7 +713,7 @@ export default function LandingPage() {
       </section>
 
       {/* ━━━ ③ 問題提起 ━━━ */}
-      <section className="px-6 py-28" style={{ backgroundColor: "#fff" }}>
+      <section className="px-6 py-16 lg:py-28" style={{ backgroundColor: "#fff" }}>
         <div className="max-w-6xl mx-auto">
           <motion.div
             variants={fadeUp}
@@ -721,11 +721,11 @@ export default function LandingPage() {
             whileInView="visible"
             viewport={VIEWPORT}
             transition={{ duration: 0.6, ease: EASE }}
-            className="text-center mb-16"
+            className="text-center mb-10 lg:mb-16"
           >
             <h2
               className="font-bold"
-              style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)", fontSize: "40px" }}
+              style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)", fontSize: "clamp(26px, 3.5vw, 40px)" }}
             >
               こんな経験、ありませんか？
             </h2>
@@ -760,7 +760,7 @@ export default function LandingPage() {
                 whileInView="visible"
                 viewport={VIEWPORT}
                 transition={{ duration: 0.6, ease: EASE, delay: i * 0.1 }}
-                className="rounded-2xl p-8 shadow-sm"
+                className="rounded-2xl p-5 sm:p-8 shadow-sm"
                 style={{ backgroundColor: "#f9fafb" }}
               >
                 <div
@@ -785,8 +785,8 @@ export default function LandingPage() {
       </section>
 
       {/* ━━━ ④ 解決提案 ━━━ */}
-      <section className="px-6 py-28" style={{ backgroundColor: "#f0faf5" }}>
-        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
+      <section className="px-6 py-16 lg:py-28" style={{ backgroundColor: "#f0faf5" }}>
+        <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
           {/* 左テキスト */}
           <motion.div
             variants={fadeUp}
@@ -797,7 +797,7 @@ export default function LandingPage() {
           >
             <h2
               className="font-bold mb-6"
-              style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)", fontSize: "40px", lineHeight: 1.25 }}
+              style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)", fontSize: "clamp(26px, 3.5vw, 40px)", lineHeight: 1.25 }}
             >
               OREIが、名刺交換の<br />翌日を変える
             </h2>
@@ -868,7 +868,7 @@ export default function LandingPage() {
       </section>
 
       {/* ━━━ ⑤ 機能紹介 ━━━ */}
-      <section className="px-6 py-28" style={{ backgroundColor: "#fff" }}>
+      <section className="px-6 py-16 lg:py-28" style={{ backgroundColor: "#fff" }}>
         <div className="max-w-6xl mx-auto">
           <motion.div
             variants={fadeUp}
@@ -876,23 +876,23 @@ export default function LandingPage() {
             whileInView="visible"
             viewport={VIEWPORT}
             transition={{ duration: 0.6, ease: EASE }}
-            className="text-center mb-20"
+            className="text-center mb-12 lg:mb-20"
           >
             <h2
               className="font-bold"
-              style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)", fontSize: "40px" }}
+              style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)", fontSize: "clamp(26px, 3.5vw, 40px)" }}
             >
               一度の名刺交換を、長期的な関係へ
             </h2>
           </motion.div>
 
-          <div className="space-y-24">
+          <div className="space-y-14 lg:space-y-24">
 
             {/* 機能1: 件名3案・本文3案 */}
             <motion.div
               variants={fadeUp} initial="hidden" whileInView="visible" viewport={VIEWPORT}
               transition={{ duration: 0.6, ease: EASE }}
-              className="grid lg:grid-cols-2 gap-12 items-center"
+              className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center"
             >
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-5"
@@ -917,7 +917,7 @@ export default function LandingPage() {
             <motion.div
               variants={fadeUp} initial="hidden" whileInView="visible" viewport={VIEWPORT}
               transition={{ duration: 0.6, ease: EASE }}
-              className="grid lg:grid-cols-2 gap-12 items-center lg:[direction:rtl]"
+              className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center lg:[direction:rtl]"
             >
               <div className="lg:[direction:ltr]">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-5"
@@ -944,7 +944,7 @@ export default function LandingPage() {
             <motion.div
               variants={fadeUp} initial="hidden" whileInView="visible" viewport={VIEWPORT}
               transition={{ duration: 0.6, ease: EASE }}
-              className="grid lg:grid-cols-2 gap-12 items-center"
+              className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center"
             >
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-5"
@@ -969,7 +969,7 @@ export default function LandingPage() {
             <motion.div
               variants={fadeUp} initial="hidden" whileInView="visible" viewport={VIEWPORT}
               transition={{ duration: 0.6, ease: EASE }}
-              className="grid lg:grid-cols-2 gap-12 items-center lg:[direction:rtl]"
+              className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center lg:[direction:rtl]"
             >
               <div className="lg:[direction:ltr]">
                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold mb-5"
@@ -1018,7 +1018,7 @@ export default function LandingPage() {
       </section>
 
       {/* ━━━ ⑥ Before/After ━━━ */}
-      <section className="px-6 py-28" style={{ backgroundColor: "#f0f4fa" }}>
+      <section className="px-6 py-16 lg:py-28" style={{ backgroundColor: "#f0f4fa" }}>
         <div className="max-w-6xl mx-auto">
           <motion.div
             variants={fadeUp}
@@ -1026,11 +1026,11 @@ export default function LandingPage() {
             whileInView="visible"
             viewport={VIEWPORT}
             transition={{ duration: 0.6, ease: EASE }}
-            className="text-center mb-16"
+            className="text-center mb-10 lg:mb-16"
           >
             <h2
               className="font-bold"
-              style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)", fontSize: "40px", lineHeight: 1.3 }}
+              style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)", fontSize: "clamp(26px, 3.5vw, 40px)", lineHeight: 1.3 }}
             >
               送れる人と、送れない人。<br />差はここで生まれる。
             </h2>
@@ -1042,7 +1042,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={VIEWPORT}
               transition={{ duration: 0.6, ease: EASE }}
-              className="rounded-2xl p-8"
+              className="rounded-2xl p-5 sm:p-8"
               style={{ backgroundColor: "#fff", boxShadow: "0 2px 16px rgba(0,0,0,0.06)" }}
             >
               <div className="flex items-center gap-3 mb-6">
@@ -1077,7 +1077,7 @@ export default function LandingPage() {
               whileInView={{ opacity: 1, x: 0 }}
               viewport={VIEWPORT}
               transition={{ duration: 0.6, ease: EASE }}
-              className="rounded-2xl p-8"
+              className="rounded-2xl p-5 sm:p-8"
               style={{
                 background: "linear-gradient(135deg, #1B3A6B 0%, #2a5298 100%)",
                 boxShadow: "0 2px 16px rgba(27,58,107,0.2)",
@@ -1130,7 +1130,7 @@ export default function LandingPage() {
             </p>
             <h2
               className="font-bold"
-              style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)", fontSize: "36px" }}
+              style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)", fontSize: "clamp(22px, 3vw, 36px)" }}
             >
               営業1人あたりの<br />月間コストを計算してみました
             </h2>
@@ -1170,7 +1170,7 @@ export default function LandingPage() {
                 whileInView="visible"
                 viewport={VIEWPORT}
                 transition={{ duration: 0.6, ease: EASE, delay: i * 0.1 }}
-                className="rounded-2xl p-7 text-center"
+                className="rounded-2xl p-5 sm:p-7 text-center"
                 style={{ backgroundColor: "#f9fafb", border: "1px solid var(--color-border)" }}
               >
                 <div
@@ -1220,7 +1220,7 @@ export default function LandingPage() {
       <PricingSection />
 
       {/* ━━━ ⑨ FAQ ━━━ */}
-      <section className="px-6 py-28" style={{ backgroundColor: "#fff" }}>
+      <section className="px-6 py-16 lg:py-28" style={{ backgroundColor: "#fff" }}>
         <div className="max-w-3xl mx-auto">
           <motion.div
             variants={fadeUp}
@@ -1228,11 +1228,11 @@ export default function LandingPage() {
             whileInView="visible"
             viewport={VIEWPORT}
             transition={{ duration: 0.6, ease: EASE }}
-            className="text-center mb-16"
+            className="text-center mb-10 lg:mb-16"
           >
             <h2
               className="font-bold"
-              style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)", fontSize: "40px" }}
+              style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)", fontSize: "clamp(26px, 3.5vw, 40px)" }}
             >
               よくある質問
             </h2>
@@ -1275,7 +1275,7 @@ export default function LandingPage() {
       </section>
 
       {/* ━━━ ⑩ 最終CTA ━━━ */}
-      <section className="px-6 py-28 text-center" style={{ backgroundColor: "var(--color-primary)" }}>
+      <section className="px-6 py-16 lg:py-28 text-center" style={{ backgroundColor: "var(--color-primary)" }}>
         <div className="max-w-3xl mx-auto">
           <motion.h2
             variants={fadeUp}

@@ -13,7 +13,7 @@ export default function TokushohoPage() {
     { label: "サービス名", value: "OREI（名刺交換後のメール生成サービス）" },
     {
       label: "販売価格",
-      value: "無料プラン：月5通まで無料\nPERSONAL月額プラン：¥1,980（税込）/ 月\nPERSONAL年額プラン：¥19,800（税込）/ 年",
+      value: "無料プラン：月5通まで無料\nPERSONAL月額プラン：¥1,980（税込）/ 月\nPERSONAL年額プラン：¥15,360（税込）/ 年（月換算 ¥1,280）",
     },
     { label: "追加費用", value: "なし（インターネット接続料金はお客様負担）" },
     { label: "支払方法", value: "クレジットカード（Visa・Mastercard・American Express・JCB）" },

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
@@ -12,7 +12,11 @@ import { toast } from "sonner";
 import { Contact, PlanType, UseCase } from "@/types";
 import UpgradeOfferDialog from "@/components/upgrade-offer-dialog";
 import WelcomeModal, { WELCOME_DISMISSED_KEY } from "@/components/welcome-modal";
+import { Search, ArrowUpDown, Download } from "lucide-react";
 import "driver.js/dist/driver.css";
+
+type SortKey = "created_at" | "company" | "name";
+type SortDir = "asc" | "desc";
 
 type Props = {
   contacts: Contact[];
@@ -95,6 +99,9 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
   const [contacts, setContacts] = useState<Contact[]>(initialContacts);
   const [offerOpen, setOfferOpen] = useState(false);
   const [useCase, setUseCase] = useState<UseCase>(initialUseCase);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortKey, setSortKey] = useState<SortKey>("created_at");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [modeChanging, setModeChanging] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(() => {
     if (tutorialCompleted) return false;
@@ -158,8 +165,75 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
 
   const usedCount = limit - remaining;
   const usagePercent = Math.min(100, (usedCount / limit) * 100);
-  const sentContacts = contacts.filter((c) => c.is_sent);
-  const unsentContacts = contacts.filter((c) => !c.is_sent);
+
+  function handleExportCSV() {
+    const escape = (v: string | null | undefined) => {
+      const s = v ?? "";
+      return s.includes(",") || s.includes('"') || s.includes("\n")
+        ? `"${s.replace(/"/g, '""')}"`
+        : s;
+    };
+    const headers = ["氏名", "会社名", "役職", "メール", "電話", "URL", "登録日"];
+    const rows = contacts.map((c) => [
+      escape(c.name),
+      escape(c.company),
+      escape(c.title),
+      escape(c.email),
+      escape(c.phone),
+      escape(c.url),
+      escape(c.created_at ? c.created_at.slice(0, 10) : ""),
+    ]);
+    const csv = "\uFEFF" + [headers.join(","), ...rows.map((r) => r.join(","))].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `orei_contacts_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleSort(key: SortKey) {
+    if (sortKey === key) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
+  }
+
+  const filteredContacts = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    let result = q
+      ? contacts.filter((c) =>
+          [c.name, c.company, c.title, c.email].some((v) =>
+            v?.toLowerCase().includes(q)
+          )
+        )
+      : contacts;
+
+    result = [...result].sort((a, b) => {
+      let aVal = "";
+      let bVal = "";
+      if (sortKey === "company") {
+        aVal = a.company ?? "";
+        bVal = b.company ?? "";
+      } else if (sortKey === "name") {
+        aVal = a.name ?? "";
+        bVal = b.name ?? "";
+      } else {
+        aVal = a.created_at;
+        bVal = b.created_at;
+      }
+      const cmp = aVal.localeCompare(bVal, "ja");
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+    return result;
+  }, [contacts, searchQuery, sortKey, sortDir]);
+
+  const sentContacts = filteredContacts.filter((c) => c.is_sent);
+  const unsentContacts = filteredContacts.filter((c) => !c.is_sent);
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: "var(--color-bg)" }}>
@@ -287,6 +361,73 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
           </Button>
         </Link>
 
+        {/* 検索・ソート */}
+        {contacts.length > 0 && (
+          <div className="mb-4 space-y-2">
+            {/* 検索 */}
+            <div className="relative">
+              <Search
+                size={15}
+                className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"
+                style={{ color: "var(--color-muted)" }}
+              />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="氏名・会社名・役職・メールで検索"
+                className="w-full h-10 pl-9 pr-4 rounded-xl text-sm outline-none"
+                style={{
+                  backgroundColor: "var(--color-surface)",
+                  border: "1px solid var(--color-border)",
+                  color: "var(--color-text)",
+                  fontSize: "16px",
+                }}
+              />
+            </div>
+            {/* ソートボタン + CSVエクスポート */}
+            <div className="flex items-center gap-2 flex-wrap justify-between">
+              <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs" style={{ color: "var(--color-muted)" }}>並び替え：</span>
+              {(
+                [
+                  { key: "created_at", label: "登録日" },
+                  { key: "company", label: "会社名" },
+                  { key: "name", label: "氏名" },
+                ] as { key: SortKey; label: string }[]
+              ).map(({ key, label }) => (
+                <button
+                  key={key}
+                  onClick={() => handleSort(key)}
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-all"
+                  style={{
+                    backgroundColor: sortKey === key ? "var(--color-primary)" : "var(--color-surface)",
+                    color: sortKey === key ? "#fff" : "var(--color-muted)",
+                    border: `1px solid ${sortKey === key ? "var(--color-primary)" : "var(--color-border)"}`,
+                  }}
+                >
+                  <ArrowUpDown size={11} />
+                  {label}
+                  {sortKey === key && (sortDir === "asc" ? " ↑" : " ↓")}
+                </button>
+              ))}
+              </div>
+              <button
+                onClick={handleExportCSV}
+                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-opacity hover:opacity-70"
+                style={{
+                  backgroundColor: "var(--color-surface)",
+                  color: "var(--color-muted)",
+                  border: "1px solid var(--color-border)",
+                }}
+              >
+                <Download size={11} />
+                CSV
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* 連絡先一覧 */}
         <div id="contacts-list">
         {contacts.length === 0 ? (
@@ -298,6 +439,20 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
             <p className="text-sm mt-1" style={{ color: "var(--color-muted)" }}>
               名刺を追加してお礼メールを生成しましょう
             </p>
+          </div>
+        ) : filteredContacts.length === 0 ? (
+          <div className="text-center py-12">
+            <div className="text-3xl mb-3">🔍</div>
+            <p className="font-medium" style={{ color: "var(--color-text)" }}>
+              「{searchQuery}」に一致する連絡先がありません
+            </p>
+            <button
+              onClick={() => setSearchQuery("")}
+              className="text-sm mt-2"
+              style={{ color: "var(--color-accent)" }}
+            >
+              検索をクリア
+            </button>
           </div>
         ) : (
           <>
@@ -338,7 +493,7 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
                         <ContactCard contact={contact} onToggleSent={handleToggleSent} />
                         <button
                           onClick={() => handleDelete(contact.id)}
-                          className="absolute top-3 right-32 text-xs opacity-0 group-hover:opacity-100 transition-opacity px-2 py-1 rounded"
+                          className="absolute top-3 right-32 text-xs sm:opacity-0 sm:group-hover:opacity-100 transition-opacity px-2 py-1 rounded"
                           style={{ color: "#ef4444" }}
                         >
                           削除
