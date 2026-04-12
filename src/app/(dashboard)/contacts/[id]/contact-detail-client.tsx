@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import EmailGenerator from "@/components/email-generator";
@@ -20,6 +20,21 @@ function parseMemo(raw: string | null): MemoEntry[] {
   } catch {
     return [{ date: new Date().toISOString().slice(0, 10), text: raw }];
   }
+}
+
+const URL_SPLIT_REGEX = /(https?:\/\/[^\s]+)/g;
+
+function renderMemoText(text: string): React.ReactNode {
+  const parts = text.split(URL_SPLIT_REGEX);
+  return parts.map((part, i) =>
+    /^https?:\/\//i.test(part) ? (
+      <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: "var(--color-accent)", wordBreak: "break-all" }}>
+        {part}
+      </a>
+    ) : (
+      part
+    )
+  );
 }
 
 type Props = { contact: Contact; latestEmail: GeneratedEmail | null };
@@ -171,7 +186,9 @@ export default function ContactDetailClient({ contact: initialContact, latestEma
                   </div>
                   <div className="pb-3 flex-1">
                     <p className="text-xs mb-1" style={{ color: "var(--color-muted)" }}>{entry.date}</p>
-                    <p className="text-sm" style={{ color: "var(--color-text)" }}>{entry.text}</p>
+                    <p className="text-sm" style={{ color: "var(--color-text)" }}>
+                      {renderMemoText(entry.text)}
+                    </p>
                   </div>
                 </div>
               ))}

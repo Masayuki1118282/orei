@@ -108,12 +108,25 @@ function parseVCard(raw: string): QrFill {
   };
 }
 
-function parseQrContent(raw: string): { type: "vcard"; fill: QrFill } | { type: "url"; url: string } | null {
+function getSnsLabel(url: string): string | null {
+  if (/instagram\.com/i.test(url)) return "Instagram";
+  if (/line\.me/i.test(url)) return "LINE";
+  if (/twitter\.com|x\.com/i.test(url)) return "X";
+  if (/facebook\.com|fb\.com/i.test(url)) return "Facebook";
+  if (/linkedin\.com/i.test(url)) return "LinkedIn";
+  return null;
+}
+
+function parseQrContent(
+  raw: string
+): { type: "vcard"; fill: QrFill } | { type: "sns"; label: string; url: string } | { type: "url"; url: string } | null {
   const trimmed = raw.trim();
   if (trimmed.toUpperCase().includes("BEGIN:VCARD")) {
     return { type: "vcard", fill: parseVCard(trimmed) };
   }
   if (/^https?:\/\//i.test(trimmed)) {
+    const label = getSnsLabel(trimmed);
+    if (label) return { type: "sns", label, url: trimmed };
     return { type: "url", url: trimmed };
   }
   return null;
@@ -237,6 +250,10 @@ export default function BusinessCardUploader({ onNext }: Props) {
         if (f.phone) base.phone = f.phone;
         if (f.url) base.url = f.url;
         toast.success("QRコードを読み取り、連絡先情報を補完しました");
+      } else if (qrParsed?.type === "sns") {
+        const snsLine = `${qrParsed.label}: ${qrParsed.url}`;
+        base.memo = base.memo ? `${snsLine}\n${base.memo}` : snsLine;
+        toast.success(`QRコードから${qrParsed.label}を取得しました`);
       } else if (qrParsed?.type === "url") {
         base.url = qrParsed.url;
         toast.success("QRコードからURLを取得しました");
