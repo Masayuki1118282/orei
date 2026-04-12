@@ -650,7 +650,8 @@ export default function LandingPage() {
                   lineHeight: 1.25,
                 }}
               >
-                「また会いたい」と思われる営業は、<br />
+                「また会いたい」<br />
+                と思われる営業は、<br />
                 翌日にメールを送っている。
               </h1>
             </motion.div>
