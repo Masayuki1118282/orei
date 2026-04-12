@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { OcrResult } from "@/types";
 
 // ── QRコード読み取り ────────────────────────────────────────
-async function scanQrCode(file: File): Promise<string | null> {
+async function scanQrCode(file: File | Blob): Promise<string | null> {
   // 1) BarcodeDetector（iOS 17+ / Chrome Android）— EXIF・角度・実写真に強い
   if (typeof window !== "undefined" && "BarcodeDetector" in window) {
     try {
@@ -200,27 +200,30 @@ export default function BusinessCardUploader({ onNext }: Props) {
     setOcrLoading(true);
     try {
       const fd = new FormData();
+      let compressedFront: Blob | undefined;
+      let compressedBack: Blob | undefined;
       if (frontFile) {
-        const compressed = await compressImage(frontFile);
-        fd.append("frontImage", compressed, "front.jpg");
+        compressedFront = await compressImage(frontFile);
+        fd.append("frontImage", compressedFront, "front.jpg");
       }
       if (backFile) {
-        const compressed = await compressImage(backFile);
-        fd.append("backImage", compressed, "back.jpg");
+        compressedBack = await compressImage(backFile);
+        fd.append("backImage", compressedBack, "back.jpg");
       }
 
-      // OCR と QRスキャン（表裏両方）を並行実行
+      // OCR と QRスキャン（EXIF補正済み圧縮画像を使用）を並行実行
       const [ocrRes, qrFront, qrBack] = await Promise.all([
         fetch("/api/ocr", { method: "POST", body: fd }),
-        frontFile ? scanQrCode(frontFile) : Promise.resolve(null),
-        backFile ? scanQrCode(backFile) : Promise.resolve(null),
+        compressedFront ? scanQrCode(compressedFront) : Promise.resolve(null),
+        compressedBack ? scanQrCode(compressedBack) : Promise.resolve(null),
       ]);
       if (!ocrRes.ok) throw new Error();
       const data: OcrResult = await ocrRes.json();
 
       const qrRaw = qrFront ?? qrBack;
       // DEBUG: QRスキャン結果を表示（確認後削除）
-      toast.info(`QR[表]: ${qrFront ?? "なし"} / QR[裏]: ${qrBack ?? "なし"}`, { duration: 8000 });
+      const bdAvail = typeof window !== "undefined" && "BarcodeDetector" in window;
+      toast.info(`BD:${bdAvail ? "○" : "×"} 表:${qrFront ?? "なし"} 裏:${qrBack ?? "なし"}`, { duration: 10000 });
       const qrParsed = qrRaw ? parseQrContent(qrRaw) : null;
 
       const base: ContactForm = {
