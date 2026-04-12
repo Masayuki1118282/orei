@@ -254,7 +254,7 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
           borderBottom: "1px solid var(--color-border)",
         }}
       >
-        <Image src="/images/logo.svg" alt="OREI" width={72} height={22} priority />
+        <Image src="/images/logo.svg" alt="OREI" width={50} height={16} priority />
         <div className="flex items-center gap-3">
           {plan === "free" && (
             <Link href="/settings#plan">

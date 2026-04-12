@@ -603,7 +603,7 @@ export default function LandingPage() {
         }}
       >
         <Link href="/">
-          <Image src="/images/logo.svg" alt="OREI" width={80} height={25} priority />
+          <Image src="/images/logo.svg" alt="OREI" width={56} height={18} priority />
         </Link>
         <div className="flex items-center gap-4">
           <Link href="/features" className="text-sm hidden sm:block" style={{ color: "var(--color-muted)" }}>
@@ -1422,7 +1422,7 @@ export default function LandingPage() {
         style={{ backgroundColor: "var(--color-primary)" }}
       >
         <div className="flex justify-center mb-4">
-          <Image src="/images/logo-white.svg" alt="OREI" width={72} height={22} />
+          <Image src="/images/logo-white.svg" alt="OREI" width={50} height={16} />
         </div>
         <div className="flex justify-center gap-6 mb-3">
           <Link href="/privacy" style={{ color: "rgba(255,255,255,0.5)" }}>プライバシーポリシー</Link>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -75,9 +76,9 @@ export default function SignupPage() {
     <div className="min-h-screen flex items-center justify-center px-4" style={{ backgroundColor: "var(--color-bg)" }}>
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold" style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)" }}>
-            OREI
-          </h1>
+          <div className="flex justify-center mb-3">
+            <Image src="/images/logo.svg" alt="OREI" width={120} height={38} priority />
+          </div>
           <p className="mt-2 text-sm" style={{ color: "var(--color-muted)" }}>
             無料で始められます・クレカ不要
           </p>
