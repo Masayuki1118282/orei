@@ -219,6 +219,8 @@ export default function BusinessCardUploader({ onNext }: Props) {
       const data: OcrResult = await ocrRes.json();
 
       const qrRaw = qrFront ?? qrBack;
+      // DEBUG: QRスキャン結果を表示（確認後削除）
+      toast.info(`QR[表]: ${qrFront ?? "なし"} / QR[裏]: ${qrBack ?? "なし"}`, { duration: 8000 });
       const qrParsed = qrRaw ? parseQrContent(qrRaw) : null;
 
       const base: ContactForm = {
