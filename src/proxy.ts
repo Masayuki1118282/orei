@@ -43,6 +43,9 @@ export async function proxy(request: NextRequest) {
     !pathname.startsWith("/signup") &&
     !pathname.startsWith("/auth") &&
     !pathname.startsWith("/onboarding") &&
+    !pathname.startsWith("/privacy") &&
+    !pathname.startsWith("/tokushoho") &&
+    !pathname.startsWith("/features") &&
     pathname !== "/"
   ) {
     return NextResponse.redirect(new URL("/login", request.url));
