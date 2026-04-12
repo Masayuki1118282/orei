@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import ContactCard from "@/components/contact-card";
@@ -253,12 +254,7 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
           borderBottom: "1px solid var(--color-border)",
         }}
       >
-        <h1
-          className="text-xl font-bold"
-          style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)" }}
-        >
-          OREI
-        </h1>
+        <Image src="/images/logo.svg" alt="OREI" width={72} height={22} priority />
         <div className="flex items-center gap-3">
           {plan === "free" && (
             <Link href="/settings#plan">

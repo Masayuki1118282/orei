@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 
 export const metadata = {
   title: "プライバシーポリシー | OREI",
@@ -16,12 +17,8 @@ export default function PrivacyPage() {
           borderBottom: "1px solid var(--color-border)",
         }}
       >
-        <Link
-          href="/"
-          className="text-xl font-bold tracking-tight"
-          style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)" }}
-        >
-          OREI
+        <Link href="/">
+          <Image src="/images/logo.svg" alt="OREI" width={80} height={25} priority />
         </Link>
         <Link href="/" className="text-sm" style={{ color: "var(--color-muted)" }}>
           ← トップに戻る
@@ -157,18 +154,17 @@ export default function PrivacyPage() {
 
       {/* フッター */}
       <footer
-        className="px-6 py-8 text-center text-xs"
-        style={{
-          backgroundColor: "var(--color-surface)",
-          color: "var(--color-muted)",
-          borderTop: "1px solid var(--color-border)",
-        }}
+        className="px-6 py-10 text-center text-xs"
+        style={{ backgroundColor: "var(--color-primary)" }}
       >
-        <div className="flex justify-center gap-6 mb-3">
-          <Link href="/privacy" style={{ color: "var(--color-muted)" }}>プライバシーポリシー</Link>
-          <Link href="/tokushoho" style={{ color: "var(--color-muted)" }}>特定商取引法に基づく表記</Link>
+        <div className="flex justify-center mb-4">
+          <Image src="/images/logo-white.svg" alt="OREI" width={72} height={22} />
         </div>
-        <p>© 2026 OREI. All rights reserved.</p>
+        <div className="flex justify-center gap-6 mb-3">
+          <Link href="/privacy" style={{ color: "rgba(255,255,255,0.5)" }}>プライバシーポリシー</Link>
+          <Link href="/tokushoho" style={{ color: "rgba(255,255,255,0.5)" }}>特定商取引法に基づく表記</Link>
+        </div>
+        <p style={{ color: "rgba(255,255,255,0.35)" }}>© 2026 OREI. All rights reserved.</p>
       </footer>
     </div>
   );
