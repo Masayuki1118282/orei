@@ -627,7 +627,7 @@ export default function LandingPage() {
       <section className="px-6 pt-16 sm:pt-24 pb-16 sm:pb-28" style={{ backgroundColor: "#fff" }}>
         <div className="max-w-6xl mx-auto grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
           {/* テキスト */}
-          <div>
+          <div className="text-center lg:text-left">
             <motion.div
               variants={fadeUp}
               initial="hidden"
@@ -646,13 +646,12 @@ export default function LandingPage() {
                 style={{
                   fontFamily: "var(--font-heading)",
                   color: "var(--color-primary)",
-                  fontSize: "clamp(24px, 4vw, 42px)",
-                  lineHeight: 1.2,
+                  fontSize: "clamp(26px, 4vw, 42px)",
+                  lineHeight: 1.25,
                 }}
               >
-                「また会いたい」と<br />
-                思われる営業は、<br />
-                翌日にメールを<br className="lg:hidden" />送っている。
+                「また会いたい」と思われる営業は、<br />
+                翌日にメールを送っている。
               </h1>
             </motion.div>
             <motion.p
@@ -660,7 +659,7 @@ export default function LandingPage() {
               initial="hidden"
               animate="visible"
               transition={{ duration: 0.6, ease: EASE, delay: 0.15 }}
-              className="mb-10"
+              className="mb-10 mx-auto lg:mx-0"
               style={{ color: "var(--color-muted)", fontSize: "clamp(15px, 2vw, 18px)", lineHeight: 1.8, maxWidth: "480px" }}
             >
               名刺を撮影するだけ。相手の会社・事業内容をAIが自動で調べ、
@@ -867,7 +866,7 @@ export default function LandingPage() {
               className="font-bold mb-6"
               style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)", fontSize: "clamp(26px, 3.5vw, 40px)", lineHeight: 1.25 }}
             >
-              OREIが、名刺交換の<br />翌日を変える
+              OREIが名刺交換の明日を変える
             </h2>
             <p className="mb-10 leading-relaxed" style={{ color: "var(--color-muted)", fontSize: "16px" }}>
               相手の会社情報をAIが自動で調査。<br />
@@ -950,7 +949,7 @@ export default function LandingPage() {
               className="font-bold"
               style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)", fontSize: "clamp(26px, 3.5vw, 40px)" }}
             >
-              一度の名刺交換を、長期的な関係へ
+              一度の名刺交換を、長期的な<br />関係へ
             </h2>
           </motion.div>
 
