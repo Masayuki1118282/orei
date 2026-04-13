@@ -97,12 +97,16 @@ export async function POST(request: Request) {
           break;
         }
 
-        // 年額Priceかどうかで判別
-        const yearlyPriceId = process.env.STRIPE_PRICE_ID_PERSONAL_YEARLY;
+        // PriceIDでプラン判別
         const priceId = sub.items.data[0]?.price?.id;
-        const updatedPlan = (yearlyPriceId && priceId === yearlyPriceId)
-          ? "personal_yearly"
-          : "personal_monthly";
+        const personalYearlyId = process.env.STRIPE_PRICE_ID_PERSONAL_YEARLY;
+        const lightMonthlyId = process.env.STRIPE_PRICE_ID_LIGHT;
+        const lightYearlyId = process.env.STRIPE_PRICE_ID_LIGHT_YEARLY;
+
+        let updatedPlan = "personal_monthly";
+        if (personalYearlyId && priceId === personalYearlyId) updatedPlan = "personal_yearly";
+        else if (lightYearlyId && priceId === lightYearlyId) updatedPlan = "light_yearly";
+        else if (lightMonthlyId && priceId === lightMonthlyId) updatedPlan = "light_monthly";
 
         await serviceClient
           .from("profiles")

@@ -22,6 +22,7 @@ export function shouldShowOffer(): boolean {
 }
 
 export default function UpgradeOfferDialog({ open, onClose }: Props) {
+  const [selectedPlan, setSelectedPlan] = useState<"light" | "personal">("light");
   const [billing, setBilling] = useState<"monthly" | "yearly">("monthly");
   const [loading, setLoading] = useState(false);
 
@@ -34,18 +35,30 @@ export default function UpgradeOfferDialog({ open, onClose }: Props) {
     setLoading(true);
     try {
       const isYearly = billing === "yearly";
-      const body: Record<string, string> = {
-        planType: isYearly ? "personal_yearly" : "personal_monthly",
-      };
+      const body: Record<string, string> = {};
 
-      if (isYearly) {
-        // 年額: クーポンなし、年額Price ID
-        const yearlyPriceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_PERSONAL_YEARLY;
-        if (yearlyPriceId) body.priceId = yearlyPriceId;
+      if (selectedPlan === "light") {
+        if (isYearly) {
+          body.planType = "light_yearly";
+          const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_LIGHT_YEARLY;
+          if (priceId) body.priceId = priceId;
+        } else {
+          body.planType = "light_monthly";
+          const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_LIGHT_MONTHLY;
+          if (priceId) body.priceId = priceId;
+          const couponId = process.env.NEXT_PUBLIC_STRIPE_COUPON_LIGHT_FIRST_MONTH;
+          if (couponId) body.couponId = couponId;
+        }
       } else {
-        // 月額: 初月クーポン適用
-        const couponId = process.env.NEXT_PUBLIC_STRIPE_COUPON_FIRST_MONTH;
-        if (couponId) body.couponId = couponId;
+        if (isYearly) {
+          body.planType = "personal_yearly";
+          const priceId = process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_PERSONAL_YEARLY;
+          if (priceId) body.priceId = priceId;
+        } else {
+          body.planType = "personal_monthly";
+          const couponId = process.env.NEXT_PUBLIC_STRIPE_COUPON_FIRST_MONTH;
+          if (couponId) body.couponId = couponId;
+        }
       }
 
       const res = await fetch("/api/stripe/checkout", {
@@ -61,6 +74,13 @@ export default function UpgradeOfferDialog({ open, onClose }: Props) {
     }
   }
 
+  const isLight = selectedPlan === "light";
+
+  const monthlyPrice = isLight ? "¥980" : "¥1,980";
+  const monthlyFirstPrice = isLight ? "¥480" : "¥980";
+  const yearlyPrice = isLight ? "¥8,160" : "¥15,360";
+  const yearlyMonthly = isLight ? "¥680" : "¥1,280";
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="rounded-2xl max-w-md" style={{ backgroundColor: "var(--color-surface)" }}>
@@ -73,7 +93,25 @@ export default function UpgradeOfferDialog({ open, onClose }: Props) {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="mt-2 space-y-5">
+        <div className="mt-2 space-y-4">
+          {/* プラン選択 */}
+          <div className="flex rounded-xl overflow-hidden" style={{ border: "1px solid var(--color-border)" }}>
+            {(["light", "personal"] as const).map((p) => (
+              <button
+                key={p}
+                type="button"
+                onClick={() => setSelectedPlan(p)}
+                className="flex-1 py-2 text-sm font-semibold transition-colors"
+                style={{
+                  backgroundColor: selectedPlan === p ? "var(--color-accent)" : "var(--color-surface)",
+                  color: selectedPlan === p ? "#fff" : "var(--color-muted)",
+                }}
+              >
+                {p === "light" ? "LIGHT" : "PERSONAL"}
+              </button>
+            ))}
+          </div>
+
           {/* 特別価格バナー */}
           <div
             className="rounded-xl p-4 text-center"
@@ -82,17 +120,29 @@ export default function UpgradeOfferDialog({ open, onClose }: Props) {
             <p className="text-sm font-medium mb-1" style={{ color: "var(--color-accent)" }}>
               今だけ初月特別価格
             </p>
-            <p className="text-3xl font-bold" style={{ color: "var(--color-primary)" }}>
-              980<span className="text-lg">円</span>
-            </p>
-            <p className="text-sm" style={{ color: "var(--color-muted)" }}>
-              通常 ¥1,980/月
-            </p>
+            {billing === "monthly" ? (
+              <>
+                <p className="text-3xl font-bold" style={{ color: "var(--color-primary)" }}>
+                  {monthlyFirstPrice.replace("¥", "")}<span className="text-lg">円</span>
+                </p>
+                <p className="text-sm" style={{ color: "var(--color-muted)" }}>
+                  通常 {monthlyPrice}/月
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-3xl font-bold" style={{ color: "var(--color-primary)" }}>
+                  {yearlyPrice}
+                </p>
+                <p className="text-sm" style={{ color: "var(--color-accent)" }}>
+                  月換算 {yearlyMonthly}
+                </p>
+              </>
+            )}
           </div>
 
-          {/* プラン選択 */}
+          {/* 月額/年額 */}
           <div className="space-y-3">
-            {/* 月額 */}
             <label
               className="flex items-start gap-3 p-4 rounded-xl cursor-pointer transition-all"
               style={{
@@ -115,15 +165,14 @@ export default function UpgradeOfferDialog({ open, onClose }: Props) {
                   月額プラン
                 </p>
                 <p className="text-sm" style={{ color: "var(--color-accent)" }}>
-                  初月 <strong>¥980</strong>
+                  初月 <strong>{monthlyFirstPrice}</strong>
                   <span style={{ color: "var(--color-muted)" }}>
-                    {" "}→ 翌月から ¥1,980/月
+                    {" "}→ 翌月から {monthlyPrice}/月
                   </span>
                 </p>
               </div>
             </label>
 
-            {/* 年額 */}
             <label
               className="flex items-start gap-3 p-4 rounded-xl cursor-pointer transition-all"
               style={{
@@ -148,15 +197,19 @@ export default function UpgradeOfferDialog({ open, onClose }: Props) {
                     className="text-xs px-2 py-0.5 rounded-full"
                     style={{ backgroundColor: "var(--color-accent)", color: "#fff" }}
                   >
-                    1ヶ月分お得
+                    {isLight ? "月300円" : "月700円"}お得
                   </span>
                 </p>
                 <p className="text-sm" style={{ color: "var(--color-muted)" }}>
-                  ¥15,360/年（月換算 ¥1,280）
+                  {yearlyPrice}/年（月換算 {yearlyMonthly}）
                 </p>
               </div>
             </label>
           </div>
+
+          <p className="text-xs text-center" style={{ color: "var(--color-muted)" }}>
+            {isLight ? "月20通" : "月50通"}まで生成 ・ いつでも解約可能
+          </p>
 
           <Button
             onClick={handleSubmit}

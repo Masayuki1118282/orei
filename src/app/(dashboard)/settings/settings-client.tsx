@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
-import { Profile, isPaidPlan } from "@/types";
+import { Profile, isPaidPlan, PLAN_LABELS, PLAN_LIMITS } from "@/types";
 
 type Props = {
   profile: Profile | null;
@@ -164,22 +164,22 @@ export default function SettingsClient({ profile, userEmail }: Props) {
               color: profile && isPaidPlan(profile.plan) ? "var(--color-accent)" : "#854d0e",
               border: "none",
             }}>
-              {profile?.plan === "personal_yearly" ? "PERSONAL 年額" : profile && isPaidPlan(profile.plan) ? "PERSONAL" : "FREE"}
+              {profile ? PLAN_LABELS[profile.plan] : "FREE"}
             </Badge>
           </div>
           {!profile || !isPaidPlan(profile.plan) ? (
             <div>
               <p className="text-sm mb-4" style={{ color: "var(--color-muted)" }}>
-                無料プランは月5通まで。PERSONALプランで月50通まで利用できます。
+                無料プランは月7通まで。有料プランにアップグレードするとさらに多く利用できます。
               </p>
               <Button onClick={handleUpgrade} className="w-full h-11 rounded-lg font-semibold" style={{ backgroundColor: "var(--color-accent)", color: "#fff" }}>
-                PERSONALプランへアップグレード（¥1,980/月）
+                有料プランへアップグレード
               </Button>
             </div>
           ) : (
             <div>
               <p className="text-sm mb-4" style={{ color: "var(--color-muted)" }}>
-                月50通まで利用できます。解約・変更はStripeポータルから。
+                月{profile ? PLAN_LIMITS[profile.plan] : 0}通まで利用できます。解約・変更はStripeポータルから。
               </p>
               <Button onClick={handlePortal} disabled={portalLoading} variant="outline" className="w-full h-11 rounded-lg" style={{ borderColor: "var(--color-border)" }}>
                 {portalLoading ? "処理中..." : "サブスクリプション管理"}

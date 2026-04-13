@@ -1,5 +1,5 @@
 // ユーザープロフィール型
-export type PlanType = "free" | "personal_monthly" | "personal_yearly";
+export type PlanType = "free" | "light_monthly" | "light_yearly" | "personal_monthly" | "personal_yearly";
 
 export type UseCase = "thank_you" | "cold_dm";
 
@@ -81,12 +81,23 @@ export type CompanyInfo = {
 
 // プラン上限
 export const PLAN_LIMITS: Record<PlanType, number> = {
-  free: 5,
+  free: 7,
+  light_monthly: 20,
+  light_yearly: 20,
   personal_monthly: 50,
   personal_yearly: 50,
 };
 
 // プランが有料かどうか
 export function isPaidPlan(plan: PlanType): boolean {
-  return plan === "personal_monthly" || plan === "personal_yearly";
+  return plan !== "free";
 }
+
+// プラン表示名
+export const PLAN_LABELS: Record<PlanType, string> = {
+  free: "FREE",
+  light_monthly: "LIGHT",
+  light_yearly: "LIGHT 年額",
+  personal_monthly: "PERSONAL",
+  personal_yearly: "PERSONAL 年額",
+};
