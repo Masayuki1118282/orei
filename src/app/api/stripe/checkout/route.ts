@@ -25,9 +25,17 @@ export async function POST(request: Request) {
       // body未指定の場合はデフォルト
     }
 
-    // priceIdのフォールバック
+    // planTypeからpriceIdを決定（クライアントから渡されない場合のフォールバック）
     if (!priceId) {
-      priceId = process.env.STRIPE_PRICE_ID_PERSONAL!;
+      if (planType === "light_monthly") {
+        priceId = process.env.STRIPE_PRICE_ID_LIGHT!;
+      } else if (planType === "light_yearly") {
+        priceId = process.env.STRIPE_PRICE_ID_LIGHT_YEARLY!;
+      } else if (planType === "personal_yearly") {
+        priceId = process.env.STRIPE_PRICE_ID_PERSONAL_YEARLY!;
+      } else {
+        priceId = process.env.STRIPE_PRICE_ID_PERSONAL!;
+      }
     }
 
     const serviceClient = createServiceClient();
