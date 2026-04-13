@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
-import { Contact, PlanType, UseCase } from "@/types";
+import { Contact, PlanType, UseCase, PLAN_LABELS, isPaidPlan } from "@/types";
 import UpgradeOfferDialog from "@/components/upgrade-offer-dialog";
 import WelcomeModal, { WELCOME_DISMISSED_KEY } from "@/components/welcome-modal";
 import { Search, ArrowUpDown, Download } from "lucide-react";
@@ -59,7 +59,7 @@ async function startTour() {
         popover: {
           title: "使用量の確認",
           description:
-            "無料プランは月5通まで。上限に達したら特別オファーが表示されます。",
+            "無料プランは月7通まで。上限に達したら特別オファーが表示されます。",
           side: "bottom",
           align: "center",
         },
@@ -126,7 +126,7 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
   useEffect(() => {
     if (!showUpgradeSuccess || syncedRef.current) return;
     syncedRef.current = true;
-    toast.success("PERSONALプランへのアップグレードが完了しました 🎉");
+    toast.success(`${PLAN_LABELS[plan as PlanType] ?? "有料プラン"}へのアップグレードが完了しました 🎉`);
     window.history.replaceState({}, "", "/dashboard");
   }, [showUpgradeSuccess]);
 
@@ -270,12 +270,12 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
               </Badge>
             </Link>
           )}
-          {(plan === "personal_monthly" || plan === "personal_yearly") && (
+          {isPaidPlan(plan) && (
             <Badge
               className="text-xs"
               style={{ backgroundColor: "#f0faf5", color: "var(--color-accent)", border: "none" }}
             >
-              {plan === "personal_yearly" ? "PERSONAL 年額" : "PERSONAL"}
+              {PLAN_LABELS[plan as PlanType] ?? plan}
             </Badge>
           )}
           <Link href="/settings" className="text-sm" style={{ color: "var(--color-muted)" }}>
