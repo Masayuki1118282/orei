@@ -80,9 +80,12 @@ export default function SettingsClient({ profile, userEmail }: Props) {
   async function handleEmailChange() {
     if (!newEmail.trim()) return;
     setEmailSaving(true);
-    const { error } = await supabase.auth.updateUser({ email: newEmail });
+    const { error } = await supabase.auth.updateUser(
+      { email: newEmail },
+      { emailRedirectTo: `${window.location.origin}/auth/callback` }
+    );
     setEmailSaving(false);
-    if (error) { toast.error("メールアドレスの変更に失敗しました"); return; }
+    if (error) { toast.error(error.message); return; }
     toast.success("確認メールを送信しました。新しいアドレスで受信を確認してください。");
     setNewEmail("");
   }
