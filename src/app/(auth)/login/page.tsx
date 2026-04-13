@@ -106,7 +106,12 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="password" style={{ color: "var(--color-text)" }}>パスワード</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" style={{ color: "var(--color-text)" }}>パスワード</Label>
+                <Link href="/forgot-password" className="text-xs" style={{ color: "var(--color-accent)" }}>
+                  パスワードをお忘れの方はこちら
+                </Link>
+              </div>
               <Input
                 id="password"
                 type="password"

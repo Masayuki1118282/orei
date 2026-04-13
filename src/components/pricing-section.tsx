@@ -123,6 +123,9 @@ export default function PricingSection() {
               <li className="flex items-center gap-2">
                 <span style={{ color: "var(--color-accent)" }}>✓</span> フォローアップ2案
               </li>
+              <li className="flex items-center gap-2">
+                <span style={{ color: "var(--color-accent)" }}>✓</span> 会社情報パーソナライズ
+              </li>
             </ul>
             <Link href="/signup" className="mt-auto">
               <Button

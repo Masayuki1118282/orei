@@ -30,6 +30,11 @@ export default function SettingsClient({ profile, userEmail }: Props) {
   const [useSignature, setUseSignature] = useState(profile?.use_signature ?? false);
   const [emailSignature, setEmailSignature] = useState(profile?.email_signature ?? "");
   const [portalLoading, setPortalLoading] = useState(false);
+  const [newEmail, setNewEmail] = useState("");
+  const [emailSaving, setEmailSaving] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   async function handleSave() {
     setSaving(true);
@@ -70,6 +75,28 @@ export default function SettingsClient({ profile, userEmail }: Props) {
     const data = await res.json();
     if (data.url) window.location.href = data.url;
     else { toast.error("処理に失敗しました"); setPortalLoading(false); }
+  }
+
+  async function handleEmailChange() {
+    if (!newEmail.trim()) return;
+    setEmailSaving(true);
+    const { error } = await supabase.auth.updateUser({ email: newEmail });
+    setEmailSaving(false);
+    if (error) { toast.error("メールアドレスの変更に失敗しました"); return; }
+    toast.success("確認メールを送信しました。新しいアドレスで受信を確認してください。");
+    setNewEmail("");
+  }
+
+  async function handlePasswordChange() {
+    if (newPassword !== confirmPassword) { toast.error("パスワードが一致しません"); return; }
+    if (newPassword.length < 8) { toast.error("パスワードは8文字以上で入力してください"); return; }
+    setPasswordSaving(true);
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setPasswordSaving(false);
+    if (error) { toast.error("パスワードの変更に失敗しました"); return; }
+    toast.success("パスワードを変更しました");
+    setNewPassword("");
+    setConfirmPassword("");
   }
 
   async function handleUpgrade() {
@@ -186,6 +213,43 @@ export default function SettingsClient({ profile, userEmail }: Props) {
               </Button>
             </div>
           )}
+        </section>
+
+        {/* メールアドレス変更 */}
+        <section className="rounded-2xl p-5 shadow-sm" style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+          <h3 className="font-semibold mb-4" style={{ color: "var(--color-text)" }}>メールアドレスの変更</h3>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label style={{ color: "var(--color-text)" }}>現在のメールアドレス</Label>
+              <Input value={userEmail} disabled className="h-11 rounded-lg bg-gray-50" style={{ fontSize: "16px" }} />
+            </div>
+            <div className="space-y-1">
+              <Label style={{ color: "var(--color-text)" }}>新しいメールアドレス</Label>
+              <Input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} type="email" placeholder="new@example.com" className="h-11 rounded-lg" style={{ fontSize: "16px" }} />
+            </div>
+          </div>
+          <p className="text-xs mt-2 mb-3" style={{ color: "var(--color-muted)" }}>変更後、新しいアドレスに確認メールが届きます。</p>
+          <Button onClick={handleEmailChange} disabled={emailSaving || !newEmail.trim()} className="w-full h-11 rounded-lg font-semibold" style={{ backgroundColor: "var(--color-primary)", color: "#fff" }}>
+            {emailSaving ? "送信中..." : "確認メールを送る"}
+          </Button>
+        </section>
+
+        {/* パスワード変更 */}
+        <section className="rounded-2xl p-5 shadow-sm" style={{ backgroundColor: "var(--color-surface)", border: "1px solid var(--color-border)" }}>
+          <h3 className="font-semibold mb-4" style={{ color: "var(--color-text)" }}>パスワードの変更</h3>
+          <div className="space-y-3">
+            <div className="space-y-1">
+              <Label style={{ color: "var(--color-text)" }}>新しいパスワード</Label>
+              <Input value={newPassword} onChange={(e) => setNewPassword(e.target.value)} type="password" placeholder="••••••••（8文字以上）" className="h-11 rounded-lg" style={{ fontSize: "16px" }} />
+            </div>
+            <div className="space-y-1">
+              <Label style={{ color: "var(--color-text)" }}>パスワード（確認）</Label>
+              <Input value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} type="password" placeholder="••••••••" className="h-11 rounded-lg" style={{ fontSize: "16px" }} />
+            </div>
+          </div>
+          <Button onClick={handlePasswordChange} disabled={passwordSaving || !newPassword} className="w-full h-11 rounded-lg font-semibold mt-4" style={{ backgroundColor: "var(--color-primary)", color: "#fff" }}>
+            {passwordSaving ? "変更中..." : "パスワードを変更する"}
+          </Button>
         </section>
 
         <Separator />
