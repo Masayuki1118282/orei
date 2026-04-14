@@ -8,11 +8,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function SignupPage() {
   const supabase = createClient();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [passwordConfirm, setPasswordConfirm] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirm, setShowPasswordConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [done, setDone] = useState(false);
@@ -21,6 +25,10 @@ export default function SignupPage() {
     e.preventDefault();
     if (password.length < 8) {
       toast.error("パスワードは8文字以上で入力してください");
+      return;
+    }
+    if (password !== passwordConfirm) {
+      toast.error("パスワードが一致しません");
       return;
     }
     setLoading(true);
@@ -130,16 +138,51 @@ export default function SignupPage() {
             </div>
             <div className="space-y-1">
               <Label htmlFor="password" style={{ color: "var(--color-text)" }}>パスワード（8文字以上）</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                required
-                className="h-12 rounded-lg"
-                style={{ fontSize: "16px" }}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="h-12 rounded-lg pr-11"
+                  style={{ fontSize: "16px" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  style={{ color: "var(--color-muted)" }}
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="passwordConfirm" style={{ color: "var(--color-text)" }}>パスワード（確認）</Label>
+              <div className="relative">
+                <Input
+                  id="passwordConfirm"
+                  type={showPasswordConfirm ? "text" : "password"}
+                  value={passwordConfirm}
+                  onChange={(e) => setPasswordConfirm(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                  className="h-12 rounded-lg pr-11"
+                  style={{ fontSize: "16px" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordConfirm((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  style={{ color: "var(--color-muted)" }}
+                  tabIndex={-1}
+                >
+                  {showPasswordConfirm ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
             </div>
             <Button
               type="submit"
