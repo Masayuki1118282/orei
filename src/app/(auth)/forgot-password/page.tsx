@@ -18,15 +18,20 @@ export default function ForgotPasswordPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${location.origin}/auth/callback?next=/reset-password`,
-    });
-    setLoading(false);
-    if (error) {
-      toast.error("送信に失敗しました。メールアドレスを確認してください。");
-      return;
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${location.origin}/auth/callback?next=/reset-password`,
+      });
+      if (error) {
+        toast.error("送信に失敗しました。メールアドレスを確認してください。");
+        return;
+      }
+      setSent(true);
+    } catch {
+      toast.error("通信エラーが発生しました。もう一度お試しください。");
+    } finally {
+      setLoading(false);
     }
-    setSent(true);
   }
 
   return (
