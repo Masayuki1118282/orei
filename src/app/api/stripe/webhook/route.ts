@@ -39,9 +39,12 @@ export async function POST(request: Request) {
         }
         console.log("[webhook] userId:", userId);
 
-        // metadataのplan_typeで月額/年額を判別
-        const planType = session.metadata?.plan_type === "personal_yearly"
-          ? "personal_yearly"
+        // metadataのplan_typeでプランを判別
+        const validPlans = ["personal_yearly", "personal_monthly", "light_yearly", "light_monthly"] as const;
+        type ValidPlan = typeof validPlans[number];
+        const rawPlanType = session.metadata?.plan_type ?? "";
+        const planType: ValidPlan = (validPlans as readonly string[]).includes(rawPlanType)
+          ? rawPlanType as ValidPlan
           : "personal_monthly";
         console.log("[webhook] planType:", planType);
         console.log("[webhook] subscription id:", session.subscription);
