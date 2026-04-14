@@ -106,17 +106,7 @@ export default function LoginPage() {
               />
             </div>
             <div className="space-y-1">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password" style={{ color: "var(--color-text)" }}>パスワード</Label>
-                <button
-                  type="button"
-                  onClick={() => router.push("/forgot-password")}
-                  className="text-xs"
-                  style={{ color: "var(--color-accent)" }}
-                >
-                  パスワードをお忘れの方はこちら
-                </button>
-              </div>
+              <Label htmlFor="password" style={{ color: "var(--color-text)" }}>パスワード</Label>
               <Input
                 id="password"
                 type="password"
@@ -137,6 +127,16 @@ export default function LoginPage() {
               {loading ? "ログイン中..." : "ログイン"}
             </Button>
           </form>
+          <div className="text-right mt-3">
+            <button
+              type="button"
+              onClick={() => router.push("/forgot-password")}
+              className="text-xs"
+              style={{ color: "var(--color-accent)" }}
+            >
+              パスワードをお忘れの方はこちら
+            </button>
+          </div>
 
           <p className="mt-6 text-center text-sm" style={{ color: "var(--color-muted)" }}>
             アカウントをお持ちでない方は{" "}
