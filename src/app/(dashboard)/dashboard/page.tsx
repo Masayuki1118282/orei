@@ -35,15 +35,14 @@ async function syncPlanFromStripe(userId: string): Promise<PlanType | null> {
     }
 
     const sub = subscriptions.data[0];
-    const priceId = sub.items.data[0]?.price?.id;
-    const personalYearlyId = process.env.STRIPE_PRICE_ID_PERSONAL_YEARLY;
-    const lightMonthlyId = process.env.STRIPE_PRICE_ID_LIGHT;
-    const lightYearlyId = process.env.STRIPE_PRICE_ID_LIGHT_YEARLY;
 
-    let newPlan: PlanType = "personal_monthly";
-    if (personalYearlyId && priceId === personalYearlyId) newPlan = "personal_yearly";
-    else if (lightYearlyId && priceId === lightYearlyId) newPlan = "light_yearly";
-    else if (lightMonthlyId && priceId === lightMonthlyId) newPlan = "light_monthly";
+    // checkout sessionのmetadataからplan_typeを取得（webhookと同じ方式）
+    const sessions = await stripe.checkout.sessions.list({ subscription: sub.id, limit: 1 });
+    const metaPlan = sessions.data[0]?.metadata?.plan_type;
+    const validPlans: PlanType[] = ["personal_monthly", "personal_yearly", "light_monthly", "light_yearly"];
+    const newPlan: PlanType = (metaPlan && validPlans.includes(metaPlan as PlanType))
+      ? metaPlan as PlanType
+      : "personal_monthly";
 
     const { error } = await serviceClient
       .from("profiles")
