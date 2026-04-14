@@ -609,7 +609,7 @@ export default function LandingPage() {
           <Link href="/features" className="text-sm hidden sm:block" style={{ color: "var(--color-muted)" }}>
             機能一覧
           </Link>
-          <Link href="/login" className="text-sm hidden sm:block" style={{ color: "var(--color-muted)" }}>
+          <Link href="/login" className="text-sm" style={{ color: "var(--color-muted)" }}>
             ログイン
           </Link>
           <Link href="/signup">
