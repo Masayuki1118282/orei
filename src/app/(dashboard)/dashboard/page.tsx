@@ -16,8 +16,6 @@ async function syncPlanFromStripe(userId: string): Promise<PlanType | null> {
       .eq("id", userId)
       .single();
 
-    console.log("[dashboard/page] syncPlan profile.plan:", profile?.plan, "stripe_customer_id:", profile?.stripe_customer_id);
-
     if (!profile?.stripe_customer_id) return null;
 
     const subscriptions = await stripe.subscriptions.list({
@@ -26,13 +24,7 @@ async function syncPlanFromStripe(userId: string): Promise<PlanType | null> {
       limit: 1,
     });
 
-    console.log("[dashboard/page] syncPlan active subs:", subscriptions.data.length);
-
-    if (subscriptions.data.length === 0) {
-      const allSubs = await stripe.subscriptions.list({ customer: profile.stripe_customer_id, limit: 5 });
-      console.log("[dashboard/page] syncPlan all subs:", allSubs.data.map(s => ({ id: s.id, status: s.status })));
-      return null;
-    }
+    if (subscriptions.data.length === 0) return null;
 
     const sub = subscriptions.data[0];
 
@@ -49,13 +41,7 @@ async function syncPlanFromStripe(userId: string): Promise<PlanType | null> {
       .update({ plan: newPlan, stripe_subscription_id: sub.id })
       .eq("id", userId);
 
-    if (error) {
-      console.error("[dashboard/page] syncPlan DB UPDATE FAILED:", error.code, error.message);
-      console.error("[dashboard/page] SUPABASE_URL:", process.env.NEXT_PUBLIC_SUPABASE_URL ? "set" : "MISSING");
-      console.error("[dashboard/page] SERVICE_ROLE_KEY:", process.env.SUPABASE_SERVICE_ROLE_KEY ? "set" : "MISSING");
-      return null; // DB更新失敗時はnullを返す（FREEのまま表示して再試行を促す）
-    }
-    console.log("[dashboard/page] syncPlan updated to:", newPlan);
+    if (error) return null;
     return newPlan;
   } catch (e) {
     console.error("[dashboard/page] syncPlan error:", e);
@@ -79,7 +65,6 @@ export default async function DashboardPage({
   let syncedPlan: PlanType | null = null;
   if (isUpgraded) {
     syncedPlan = await syncPlanFromStripe(user.id);
-    console.log("[dashboard/page] isUpgraded=true, syncedPlan:", syncedPlan);
   }
 
   // プロフィールと連絡先を並行取得
@@ -101,9 +86,6 @@ export default async function DashboardPage({
   const useCase = (profile?.use_case ?? "thank_you") as UseCase;
   const limit = PLAN_LIMITS[plan];
   const remaining = Math.max(0, limit - (profile?.monthly_usage ?? 0));
-  console.log("[dashboard/page] final plan:", plan, "remaining:", remaining);
-  console.log("[dashboard/page] tutorial_completed:", profile?.tutorial_completed, "profile null:", profile === null);
-
   return (
     <DashboardClient
       contacts={contacts ?? []}
