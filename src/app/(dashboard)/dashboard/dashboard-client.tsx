@@ -107,6 +107,7 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
   const [sentFilter, setSentFilter] = useState<"all" | "unsent" | "sent">("all");
   const [modeChanging, setModeChanging] = useState(false);
   const [csvImportOpen, setCsvImportOpen] = useState(false);
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [welcomeOpen, setWelcomeOpen] = useState(() => {
     if (tutorialCompleted) return false;
     if (typeof window !== "undefined" && localStorage.getItem(WELCOME_DISMISSED_KEY) === "true") return false;
@@ -206,6 +207,12 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
     }
   }
 
+  const allTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    contacts.forEach((c) => c.tags?.forEach((t) => tagSet.add(t)));
+    return Array.from(tagSet).sort((a, b) => a.localeCompare(b, "ja"));
+  }, [contacts]);
+
   const filteredContacts = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     let result = q
@@ -215,6 +222,8 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
           )
         )
       : contacts;
+
+    if (selectedTag) result = result.filter((c) => c.tags?.includes(selectedTag));
 
     if (sentFilter === "unsent") result = result.filter((c) => !c.is_sent);
     else if (sentFilter === "sent") result = result.filter((c) => c.is_sent);
@@ -418,6 +427,26 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
                 </button>
               ))}
             </div>
+            {/* タグフィルター */}
+            {allTags.length > 0 && (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className="text-xs" style={{ color: "var(--color-muted)" }}>タグ：</span>
+                {allTags.map((tag) => (
+                  <button
+                    key={tag}
+                    onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                    className="px-3 py-1 rounded-full text-xs font-medium transition-all"
+                    style={{
+                      backgroundColor: selectedTag === tag ? "var(--color-accent)" : "var(--color-surface)",
+                      color: selectedTag === tag ? "#fff" : "var(--color-muted)",
+                      border: `1px solid ${selectedTag === tag ? "var(--color-accent)" : "var(--color-border)"}`,
+                    }}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            )}
             {/* ソートボタン + CSVエクスポート */}
             <div className="flex items-center gap-2 flex-wrap justify-between">
               <div className="flex items-center gap-2 flex-wrap">
@@ -498,14 +527,16 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
           <div className="text-center py-12">
             <div className="text-3xl mb-3">🔍</div>
             <p className="font-medium" style={{ color: "var(--color-text)" }}>
-              「{searchQuery}」に一致する連絡先がありません
+              {selectedTag
+                ? `タグ「${selectedTag}」に一致する連絡先がありません`
+                : `「${searchQuery}」に一致する連絡先がありません`}
             </p>
             <button
-              onClick={() => setSearchQuery("")}
+              onClick={() => { setSearchQuery(""); setSelectedTag(null); }}
               className="text-sm mt-2"
               style={{ color: "var(--color-accent)" }}
             >
-              検索をクリア
+              フィルターをクリア
             </button>
           </div>
         ) : (

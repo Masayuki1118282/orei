@@ -38,6 +38,7 @@ export type Contact = {
   company_description: string | null;
   company_confirmed: boolean;
   is_sent: boolean;
+  tags: string[];
   created_at: string;
 };
 

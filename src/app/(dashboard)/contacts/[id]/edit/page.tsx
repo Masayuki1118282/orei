@@ -28,6 +28,8 @@ export default function EditContactPage() {
     url: "",
     memo: "",
   });
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
 
   useEffect(() => {
     async function fetchContact() {
@@ -54,6 +56,7 @@ export default function EditContactPage() {
         url: contact.url ?? "",
         memo: contact.memo ?? "",
       });
+      setTags(contact.tags ?? []);
       setLoading(false);
     }
     fetchContact();
@@ -81,6 +84,7 @@ export default function EditContactPage() {
         phone: form.phone || null,
         url: form.url || null,
         memo: form.memo || null,
+        tags,
       })
       .eq("id", id);
 
@@ -217,6 +221,67 @@ export default function EditContactPage() {
               rows={3}
               style={{ fontSize: "16px" }}
             />
+          </div>
+
+          {/* タグ */}
+          <div className="space-y-2">
+            <Label style={{ color: "var(--color-text)" }}>カテゴリタグ</Label>
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium"
+                    style={{ backgroundColor: "#f0faf5", color: "var(--color-accent)", border: "1px solid #d1fae5" }}
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => setTags(tags.filter((t) => t !== tag))}
+                      className="ml-0.5 leading-none hover:opacity-60"
+                      aria-label={`${tag}を削除`}
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.nativeEvent.isComposing) {
+                    e.preventDefault();
+                    const t = tagInput.trim();
+                    if (t && !tags.includes(t)) setTags([...tags, t]);
+                    setTagInput("");
+                  }
+                }}
+                placeholder="例: 顧客候補, SaaS業者"
+                className="flex-1 h-10 px-3 rounded-lg text-sm"
+                style={{
+                  border: "1px solid var(--color-border)",
+                  backgroundColor: "var(--color-bg)",
+                  color: "var(--color-text)",
+                  fontSize: "16px",
+                }}
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const t = tagInput.trim();
+                  if (t && !tags.includes(t)) setTags([...tags, t]);
+                  setTagInput("");
+                }}
+                className="px-4 h-10 rounded-lg text-sm font-medium"
+                style={{ backgroundColor: "var(--color-bg)", border: "1px solid var(--color-border)", color: "var(--color-muted)" }}
+              >
+                追加
+              </button>
+            </div>
           </div>
 
           <div className="flex gap-3 pt-2">

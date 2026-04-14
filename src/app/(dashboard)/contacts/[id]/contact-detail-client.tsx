@@ -11,6 +11,22 @@ import { toast } from "sonner";
 import { Contact, GeneratedEmail, MemoEntry } from "@/types";
 import UpgradeOfferDialog from "@/components/upgrade-offer-dialog";
 
+const TAG_COLORS = [
+  { bg: "#f0faf5", color: "#3D9E72" },
+  { bg: "#eff6ff", color: "#3b82f6" },
+  { bg: "#fef3c7", color: "#d97706" },
+  { bg: "#fdf2f8", color: "#ec4899" },
+  { bg: "#f5f3ff", color: "#7c3aed" },
+  { bg: "#fff1f2", color: "#e11d48" },
+  { bg: "#f0f9ff", color: "#0284c7" },
+];
+
+function tagColor(tag: string) {
+  let h = 0;
+  for (let i = 0; i < tag.length; i++) h += tag.charCodeAt(i);
+  return TAG_COLORS[h % TAG_COLORS.length];
+}
+
 function parseMemo(raw: string | null): MemoEntry[] {
   if (!raw) return [];
   try {
@@ -148,6 +164,22 @@ export default function ContactDetailClient({ contact: initialContact, latestEma
             <p className="text-sm" style={{ color: "var(--color-muted)" }}>
               {contact.company}{contact.title && ` / ${contact.title}`}
             </p>
+          )}
+          {contact.tags?.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {contact.tags.map((tag) => {
+                const c = tagColor(tag);
+                return (
+                  <span
+                    key={tag}
+                    className="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium"
+                    style={{ backgroundColor: c.bg, color: c.color }}
+                  >
+                    {tag}
+                  </span>
+                );
+              })}
+            </div>
           )}
           <Separator className="my-3" />
           <div className="space-y-1 text-sm" style={{ color: "var(--color-muted)" }}>
