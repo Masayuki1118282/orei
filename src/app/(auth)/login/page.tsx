@@ -108,9 +108,14 @@ export default function LoginPage() {
             <div className="space-y-1">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password" style={{ color: "var(--color-text)" }}>パスワード</Label>
-                <Link href="/forgot-password" className="text-xs" style={{ color: "var(--color-accent)" }}>
+                <button
+                  type="button"
+                  onClick={() => router.push("/forgot-password")}
+                  className="text-xs"
+                  style={{ color: "var(--color-accent)" }}
+                >
                   パスワードをお忘れの方はこちら
-                </Link>
+                </button>
               </div>
               <Input
                 id="password"
