@@ -35,11 +35,15 @@ async function syncPlanFromStripe(userId: string): Promise<PlanType | null> {
     }
 
     const sub = subscriptions.data[0];
-    const yearlyPriceId = process.env.STRIPE_PRICE_ID_PERSONAL_YEARLY;
     const priceId = sub.items.data[0]?.price?.id;
-    const newPlan: PlanType = (yearlyPriceId && priceId === yearlyPriceId)
-      ? "personal_yearly"
-      : "personal_monthly";
+    const personalYearlyId = process.env.STRIPE_PRICE_ID_PERSONAL_YEARLY;
+    const lightMonthlyId = process.env.STRIPE_PRICE_ID_LIGHT;
+    const lightYearlyId = process.env.STRIPE_PRICE_ID_LIGHT_YEARLY;
+
+    let newPlan: PlanType = "personal_monthly";
+    if (personalYearlyId && priceId === personalYearlyId) newPlan = "personal_yearly";
+    else if (lightYearlyId && priceId === lightYearlyId) newPlan = "light_yearly";
+    else if (lightMonthlyId && priceId === lightMonthlyId) newPlan = "light_monthly";
 
     const { error } = await serviceClient
       .from("profiles")
