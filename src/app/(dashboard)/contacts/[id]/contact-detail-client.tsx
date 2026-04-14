@@ -47,11 +47,13 @@ export default function ContactDetailClient({ contact: initialContact, latestEma
   const [memoEntries, setMemoEntries] = useState<MemoEntry[]>(() => parseMemo(initialContact.memo));
   const [newMemoText, setNewMemoText] = useState("");
   const [addingMemo, setAddingMemo] = useState(false);
+  const [fetchingCompanyInfo, setFetchingCompanyInfo] = useState(false);
 
   // company_description が空でも会社名があれば自動取得（CSVインポート後など）
   useEffect(() => {
     if (contact.company_description || !contact.company) return;
     const fetchCompanyInfo = async () => {
+      setFetchingCompanyInfo(true);
       try {
         const res = await fetch("/api/company", {
           method: "POST",
@@ -67,8 +69,11 @@ export default function ContactDetailClient({ contact: initialContact, latestEma
           .update({ company_description: description, company_confirmed: true })
           .eq("id", contact.id);
         setContact((c) => ({ ...c, company_description: description, company_confirmed: true }));
+        toast.success("会社情報を取得しました。メール生成に反映されます。");
       } catch {
         // サイレントフェイル（パーソナライズなしで続行）
+      } finally {
+        setFetchingCompanyInfo(false);
       }
     };
     fetchCompanyInfo();
@@ -221,6 +226,17 @@ export default function ContactDetailClient({ contact: initialContact, latestEma
             </div>
           )}
         </div>
+
+        {/* 会社情報取得中のお知らせ */}
+        {fetchingCompanyInfo && (
+          <div
+            className="rounded-xl px-4 py-3 text-sm mb-4 flex items-center gap-2"
+            style={{ backgroundColor: "#fef9c3", border: "1px solid #fde68a", color: "#92400e" }}
+          >
+            <span className="inline-block w-4 h-4 rounded-full border-2 border-t-transparent animate-spin shrink-0" style={{ borderColor: "#92400e", borderTopColor: "transparent" }} />
+            会社情報を取得中です。完了後にメールを生成するとパーソナライズされます。
+          </div>
+        )}
 
         {/* メール生成 */}
         <EmailGenerator
