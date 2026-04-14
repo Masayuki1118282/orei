@@ -186,6 +186,8 @@ export default function CsvImportModal({
       return;
     }
 
+    const MAX_IMPORT = 500;
+
     // Try UTF-8 first, then Shift-JIS fallback
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -198,10 +200,18 @@ export default function CsvImportModal({
         reader2.onload = (e2) => {
           const text2 = e2.target?.result as string;
           const result2 = parseEightCSV(text2 || "");
+          if (result2.contacts.length > MAX_IMPORT) {
+            toast.error(`一度にインポートできるのは${MAX_IMPORT}件までです。CSVを分割してください。`);
+            return;
+          }
           setParseResult(result2);
           setStep("preview");
         };
         reader2.readAsText(file, "Shift-JIS");
+        return;
+      }
+      if (result.contacts.length > MAX_IMPORT) {
+        toast.error(`一度にインポートできるのは${MAX_IMPORT}件までです。CSVを分割してください。`);
         return;
       }
       setParseResult(result);

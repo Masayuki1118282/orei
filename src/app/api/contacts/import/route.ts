@@ -30,6 +30,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No contacts" }, { status: 400 });
   }
 
+  const MAX_IMPORT = 500;
+  if (contacts.length > MAX_IMPORT) {
+    return NextResponse.json(
+      { error: `一度にインポートできるのは${MAX_IMPORT}件までです。CSVを分割してください。` },
+      { status: 400 }
+    );
+  }
+
   // Fetch existing contacts for duplicate detection
   const { data: existing } = await supabase
     .from("contacts")
@@ -92,23 +100,29 @@ export async function POST(request: Request) {
     }
   }
 
-  // Sequential update for overwrites (can't bulk update different rows with different values)
+  // Parallel batch updates for overwrites (chunks of 20 to avoid connection exhaustion)
   let updated = 0;
-  for (const { id, contact } of toOverwrite) {
-    const { error } = await supabase
-      .from("contacts")
-      .update({
-        company: contact.company || null,
-        title: contact.title || null,
-        email: contact.email || null,
-        phone: contact.phone || null,
-        address: contact.address || null,
-        url: contact.url || null,
-        memo: contact.memo || null,
-      })
-      .eq("id", id)
-      .eq("user_id", user.id);
-    if (!error) updated++;
+  const CHUNK = 20;
+  for (let i = 0; i < toOverwrite.length; i += CHUNK) {
+    const chunk = toOverwrite.slice(i, i + CHUNK);
+    const results = await Promise.all(
+      chunk.map(({ id, contact }) =>
+        supabase
+          .from("contacts")
+          .update({
+            company: contact.company || null,
+            title: contact.title || null,
+            email: contact.email || null,
+            phone: contact.phone || null,
+            address: contact.address || null,
+            url: contact.url || null,
+            memo: contact.memo || null,
+          })
+          .eq("id", id)
+          .eq("user_id", user.id)
+      )
+    );
+    updated += results.filter((r) => !r.error).length;
   }
 
   return NextResponse.json({ imported, updated, skipped, newContacts });
