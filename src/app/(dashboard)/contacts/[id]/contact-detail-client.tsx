@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import EmailGenerator from "@/components/email-generator";
@@ -47,6 +47,32 @@ export default function ContactDetailClient({ contact: initialContact, latestEma
   const [memoEntries, setMemoEntries] = useState<MemoEntry[]>(() => parseMemo(initialContact.memo));
   const [newMemoText, setNewMemoText] = useState("");
   const [addingMemo, setAddingMemo] = useState(false);
+
+  // company_description が空でも会社名があれば自動取得（CSVインポート後など）
+  useEffect(() => {
+    if (contact.company_description || !contact.company) return;
+    const fetchCompanyInfo = async () => {
+      try {
+        const res = await fetch("/api/company", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ company: contact.company, url: contact.url }),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        const description: string | null = data.summary?.trim() || null;
+        if (!description) return;
+        await supabase
+          .from("contacts")
+          .update({ company_description: description, company_confirmed: true })
+          .eq("id", contact.id);
+        setContact((c) => ({ ...c, company_description: description, company_confirmed: true }));
+      } catch {
+        // サイレントフェイル（パーソナライズなしで続行）
+      }
+    };
+    fetchCompanyInfo();
+  }, [contact.id]);
 
   async function toggleSent() {
     const next = !contact.is_sent;
