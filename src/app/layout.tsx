@@ -21,6 +21,9 @@ export const metadata: Metadata = {
   title: "OREI - 名刺からパーソナライズされたお礼メールを3秒で",
   description:
     "名刺を撮影するだけでAIが自動でパーソナライズされたお礼メールを生成。営業担当者の送信作業を劇的に効率化するB2B SaaS。",
+  verification: {
+    google: "4z0_J_7_X_6zDE36a0fxhqconf7SZLfR3O1Q5yFbKDg",
+  },
 };
 
 export default function RootLayout({
