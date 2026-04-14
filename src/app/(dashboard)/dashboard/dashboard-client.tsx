@@ -108,11 +108,7 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
   const [modeChanging, setModeChanging] = useState(false);
   const [csvImportOpen, setCsvImportOpen] = useState(false);
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
-  const [welcomeOpen, setWelcomeOpen] = useState(() => {
-    if (tutorialCompleted) return false;
-    if (typeof window !== "undefined" && localStorage.getItem(WELCOME_DISMISSED_KEY) === "true") return false;
-    return true;
-  });
+  const [welcomeOpen, setWelcomeOpen] = useState(!tutorialCompleted);
 
   async function handleToggleMode() {
     const next: UseCase = useCase === "thank_you" ? "cold_dm" : "thank_you";
