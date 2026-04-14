@@ -518,9 +518,9 @@ function Feature4Visual() {
 
 function Feature5Visual() {
   const contacts = [
-    { name: "田中 健一", company: "株式会社サンプル", sent: true },
-    { name: "鈴木 美咲", company: "テック合同会社", sent: false },
-    { name: "山本 浩二", company: "〇〇商事", sent: false },
+    { name: "田中 健一", company: "株式会社サンプル", sent: true, tag: "顧客候補", tagBg: "#f0faf5", tagColor: "#3D9E72" },
+    { name: "鈴木 美咲", company: "テック合同会社", sent: false, tag: "SaaS業者", tagBg: "#eff6ff", tagColor: "#3b82f6" },
+    { name: "山本 浩二", company: "〇〇商事", sent: false, tag: "採用支援", tagBg: "#fef3c7", tagColor: "#d97706" },
   ];
   return (
     <div
@@ -549,6 +549,31 @@ function Feature5Visual() {
           CSV
         </div>
       </div>
+      {/* タグフィルター */}
+      <div
+        className="flex items-center gap-1.5 px-4 py-2 flex-wrap"
+        style={{ borderBottom: "1px solid var(--color-border)", backgroundColor: "#f9fafb" }}
+      >
+        <span style={{ color: "var(--color-muted)", fontSize: "9px" }}>タグ：</span>
+        {[
+          { label: "顧客候補", bg: "#f0faf5", color: "#3D9E72", active: true },
+          { label: "SaaS業者", bg: "#eff6ff", color: "#3b82f6", active: false },
+          { label: "採用支援", bg: "#fef3c7", color: "#d97706", active: false },
+        ].map((t) => (
+          <span
+            key={t.label}
+            className="px-2 py-0.5 rounded-full font-medium"
+            style={{
+              backgroundColor: t.active ? t.color : t.bg,
+              color: t.active ? "#fff" : t.color,
+              fontSize: "9px",
+              border: `1px solid ${t.color}40`,
+            }}
+          >
+            {t.label}
+          </span>
+        ))}
+      </div>
       {/* 連絡先リスト */}
       <div className="divide-y" style={{ borderColor: "var(--color-border)" }}>
         {contacts.map((c, i) => (
@@ -566,6 +591,12 @@ function Feature5Visual() {
               <p className="text-xs truncate" style={{ color: "var(--color-muted)", fontSize: "10px" }}>
                 {c.company}
               </p>
+              <span
+                className="inline-block px-1.5 py-0.5 rounded-full font-medium mt-0.5"
+                style={{ backgroundColor: c.tagBg, color: c.tagColor, fontSize: "8px" }}
+              >
+                {c.tag}
+              </span>
             </div>
             <span
               className="text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0"
@@ -1076,11 +1107,11 @@ export default function LandingPage() {
                   連絡先管理 &amp; CSV入出力
                 </h3>
                 <p className="font-medium mb-3 leading-relaxed" style={{ color: "var(--color-text)" }}>
-                  名刺データを手元にいつでも。他の名刺アプリからの移行もラクラク。
+                  名刺データを手元にいつでも。カテゴリタグで整理して、すぐ絞り込み。
                 </p>
                 <p className="text-sm leading-relaxed" style={{ color: "var(--color-muted)" }}>
-                  登録した連絡先を氏名・会社名・登録日でソートし、キーワード検索で素早く絞り込み。CSVでエクスポートすればExcel・スプレッドシートでそのまま活用できます。文字化けなし。<br /><br />
-                  他の名刺管理アプリからエクスポートしたCSVをそのままインポートすることも可能。これまでの人脈データを丸ごと移行して、すぐにメール生成を始められます。
+                  「顧客候補」「SaaS業者」「採用支援」など自由にタグを作成して連絡先を分類。タグをワンタップするだけで一覧を絞り込めます。<br /><br />
+                  氏名・会社名・登録日でのソートやキーワード検索にも対応。CSVエクスポートでExcel・スプレッドシートでそのまま活用でき、他の名刺管理アプリからのインポートも可能です。
                 </p>
               </div>
               <Feature5Visual />

@@ -152,6 +152,12 @@ const CATEGORIES: Category[] = [
         badge: "NEW",
       },
       {
+        icon: Tag,
+        title: "カテゴリタグ & タグフィルター",
+        desc: "「顧客候補」「SaaS業者」「採用支援」など自由にタグを作成して連絡先を分類。ダッシュボードでタグをタップするだけで一覧を絞り込めます。",
+        badge: "NEW",
+      },
+      {
         icon: Download,
         title: "CSV入出力",
         desc: "連絡先データをCSVでエクスポート。ExcelやGoogleスプレッドシートで文字化けなしで開けます。他の名刺管理アプリからエクスポートしたCSVをインポートすることも可能。これまでの人脈をそのまま移行できます。",
