@@ -13,7 +13,8 @@ import { toast } from "sonner";
 import { Contact, PlanType, UseCase, PLAN_LABELS, isPaidPlan } from "@/types";
 import UpgradeOfferDialog from "@/components/upgrade-offer-dialog";
 import WelcomeModal, { WELCOME_DISMISSED_KEY } from "@/components/welcome-modal";
-import { Search, ArrowUpDown, Download } from "lucide-react";
+import { Search, ArrowUpDown, Download, Upload } from "lucide-react";
+import CsvImportModal from "@/components/csv-import-modal";
 import "driver.js/dist/driver.css";
 
 type SortKey = "created_at" | "company" | "name";
@@ -105,6 +106,7 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [sentFilter, setSentFilter] = useState<"all" | "unsent" | "sent">("all");
   const [modeChanging, setModeChanging] = useState(false);
+  const [csvImportOpen, setCsvImportOpen] = useState(false);
   const [welcomeOpen, setWelcomeOpen] = useState(() => {
     if (tutorialCompleted) return false;
     if (typeof window !== "undefined" && localStorage.getItem(WELCOME_DISMISSED_KEY) === "true") return false;
@@ -250,6 +252,14 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
         }}
       />
       <UpgradeOfferDialog open={offerOpen} onClose={() => setOfferOpen(false)} />
+      <CsvImportModal
+        open={csvImportOpen}
+        onClose={() => setCsvImportOpen(false)}
+        existingContacts={contacts}
+        onImported={(newContacts) => {
+          setContacts((prev) => [...newContacts, ...prev]);
+        }}
+      />
       {/* ヘッダー */}
       <header
         className="sticky top-0 z-10 px-4 py-4 flex items-center justify-between"
@@ -435,18 +445,32 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
                 </button>
               ))}
               </div>
-              <button
-                onClick={handleExportCSV}
-                className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-opacity hover:opacity-70"
-                style={{
-                  backgroundColor: "var(--color-surface)",
-                  color: "var(--color-muted)",
-                  border: "1px solid var(--color-border)",
-                }}
-              >
-                <Download size={11} />
-                CSV
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setCsvImportOpen(true)}
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-opacity hover:opacity-70"
+                  style={{
+                    backgroundColor: "var(--color-surface)",
+                    color: "var(--color-muted)",
+                    border: "1px solid var(--color-border)",
+                  }}
+                >
+                  <Upload size={11} />
+                  Eight取込
+                </button>
+                <button
+                  onClick={handleExportCSV}
+                  className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-opacity hover:opacity-70"
+                  style={{
+                    backgroundColor: "var(--color-surface)",
+                    color: "var(--color-muted)",
+                    border: "1px solid var(--color-border)",
+                  }}
+                >
+                  <Download size={11} />
+                  CSV
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -462,6 +486,13 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
             <p className="text-sm mt-1" style={{ color: "var(--color-muted)" }}>
               名刺を追加してお礼メールを生成しましょう
             </p>
+            <button
+              onClick={() => setCsvImportOpen(true)}
+              className="mt-4 text-sm font-medium"
+              style={{ color: "var(--color-accent)" }}
+            >
+              EightのCSVから一括インポート →
+            </button>
           </div>
         ) : filteredContacts.length === 0 ? (
           <div className="text-center py-12">
