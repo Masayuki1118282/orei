@@ -33,8 +33,8 @@ type Props = {
 
 const TOUR_KEY = "orei_tour_completed";
 
-async function startTour() {
-  if (localStorage.getItem(TOUR_KEY)) return;
+async function startTour(force = false) {
+  if (!force && localStorage.getItem(TOUR_KEY)) return;
   const mod = await import("driver.js");
   const driver = mod.driver;
   const driverObj = driver({
@@ -253,7 +253,7 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
         open={welcomeOpen}
         onComplete={() => {
           setWelcomeOpen(false);
-          startTour();
+          startTour(true);
         }}
       />
       <UpgradeOfferDialog open={offerOpen} onClose={() => setOfferOpen(false)} />
