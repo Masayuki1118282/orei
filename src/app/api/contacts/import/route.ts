@@ -46,43 +46,58 @@ export async function POST(request: Request) {
     );
   }
 
-  let imported = 0;
-  let updated = 0;
+  const toInsert: ImportContact[] = [];
+  const toOverwrite: { id: string; contact: ImportContact }[] = [];
   let skipped = 0;
-  const newContacts: object[] = [];
 
   for (const contact of contacts) {
     const dup = findDuplicate(contact);
-
     if (dup) {
       if (duplicateAction === "skip") {
         skipped++;
-        continue;
       } else if (duplicateAction === "overwrite") {
-        const { error } = await supabase
-          .from("contacts")
-          .update({
-            company: contact.company || null,
-            title: contact.title || null,
-            email: contact.email || null,
-            phone: contact.phone || null,
-            address: contact.address || null,
-            url: contact.url || null,
-            memo: contact.memo || null,
-          })
-          .eq("id", dup.id)
-          .eq("user_id", user.id);
-        if (!error) updated++;
-        continue;
+        toOverwrite.push({ id: dup.id, contact });
+      } else {
+        // keep_both
+        toInsert.push(contact);
       }
-      // keep_both: fall through to insert
+    } else {
+      toInsert.push(contact);
     }
+  }
 
+  // Bulk insert new contacts
+  let imported = 0;
+  let newContacts: object[] = [];
+  if (toInsert.length > 0) {
     const { data, error } = await supabase
       .from("contacts")
-      .insert({
-        user_id: user.id,
-        name: contact.name,
+      .insert(
+        toInsert.map((c) => ({
+          user_id: user.id,
+          name: c.name,
+          company: c.company || null,
+          title: c.title || null,
+          email: c.email || null,
+          phone: c.phone || null,
+          address: c.address || null,
+          url: c.url || null,
+          memo: c.memo || null,
+        }))
+      )
+      .select();
+    if (!error && data) {
+      imported = data.length;
+      newContacts = data;
+    }
+  }
+
+  // Sequential update for overwrites (can't bulk update different rows with different values)
+  let updated = 0;
+  for (const { id, contact } of toOverwrite) {
+    const { error } = await supabase
+      .from("contacts")
+      .update({
         company: contact.company || null,
         title: contact.title || null,
         email: contact.email || null,
@@ -91,13 +106,9 @@ export async function POST(request: Request) {
         url: contact.url || null,
         memo: contact.memo || null,
       })
-      .select()
-      .single();
-
-    if (!error && data) {
-      imported++;
-      newContacts.push(data);
-    }
+      .eq("id", id)
+      .eq("user_id", user.id);
+    if (!error) updated++;
   }
 
   return NextResponse.json({ imported, updated, skipped, newContacts });

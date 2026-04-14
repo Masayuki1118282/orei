@@ -240,6 +240,7 @@ export default function CsvImportModal({
     setParseResult(null);
     setImportResult(null);
     setDuplicateAction("skip");
+    if (fileInputRef.current) fileInputRef.current.value = "";
     onClose();
   }
 
