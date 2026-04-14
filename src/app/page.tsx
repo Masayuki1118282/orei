@@ -1073,13 +1073,14 @@ export default function LandingPage() {
                 </div>
                 <h3 className="font-bold mb-2"
                   style={{ fontFamily: "var(--font-heading)", color: "var(--color-primary)", fontSize: "26px" }}>
-                  連絡先管理 &amp; CSVエクスポート
+                  連絡先管理 &amp; CSV入出力
                 </h3>
                 <p className="font-medium mb-3 leading-relaxed" style={{ color: "var(--color-text)" }}>
-                  名刺データを手元にいつでも。
+                  名刺データを手元にいつでも。他の名刺アプリからの移行もラクラク。
                 </p>
                 <p className="text-sm leading-relaxed" style={{ color: "var(--color-muted)" }}>
-                  登録した連絡先を氏名・会社名・登録日でソートし、キーワード検索で素早く絞り込み。CSVでエクスポートすればExcel・スプレッドシートでそのまま活用できます。文字化けなし。
+                  登録した連絡先を氏名・会社名・登録日でソートし、キーワード検索で素早く絞り込み。CSVでエクスポートすればExcel・スプレッドシートでそのまま活用できます。文字化けなし。<br /><br />
+                  他の名刺管理アプリからエクスポートしたCSVをそのままインポートすることも可能。これまでの人脈データを丸ごと移行して、すぐにメール生成を始められます。
                 </p>
               </div>
               <Feature5Visual />

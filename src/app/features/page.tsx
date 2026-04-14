@@ -153,8 +153,8 @@ const CATEGORIES: Category[] = [
       },
       {
         icon: Download,
-        title: "CSVエクスポート",
-        desc: "連絡先データ（氏名・会社名・役職・メール・電話・URL・登録日）をCSVでダウンロード。ExcelやGoogleスプレッドシートで文字化けなしで開けます。",
+        title: "CSV入出力",
+        desc: "連絡先データをCSVでエクスポート。ExcelやGoogleスプレッドシートで文字化けなしで開けます。他の名刺管理アプリからエクスポートしたCSVをインポートすることも可能。これまでの人脈をそのまま移行できます。",
         badge: "NEW",
       },
       {
