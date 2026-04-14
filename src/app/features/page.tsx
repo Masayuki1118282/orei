@@ -397,7 +397,7 @@ export default function FeaturesPage() {
             まずは無料で試してみる
           </h2>
           <p className="mb-8 text-sm" style={{ color: "rgba(255,255,255,0.6)", lineHeight: 1.8 }}>
-            月5通まで無料 · クレジットカード登録不要 · 2分で完了
+            月7通まで無料 · クレジットカード登録不要 · 2分で完了
           </p>
           <Link href="/signup">
             <Button
