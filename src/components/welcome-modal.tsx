@@ -66,7 +66,7 @@ export default function WelcomeModal({ open, onComplete }: Props) {
   return (
     <Dialog open={open} onOpenChange={() => {}}>
       <DialogContent
-        className="max-w-md rounded-2xl"
+        className="max-w-md rounded-2xl overflow-y-auto max-h-[90vh]"
         showCloseButton={false}
         style={{ backgroundColor: "var(--color-surface)" }}
       >
