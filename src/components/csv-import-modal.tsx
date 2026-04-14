@@ -251,7 +251,7 @@ export default function CsvImportModal({
       >
         <DialogHeader>
           <DialogTitle style={{ color: "var(--color-text)" }}>
-            CSVインポート（Eight）
+            CSVインポート
           </DialogTitle>
         </DialogHeader>
 
@@ -259,7 +259,7 @@ export default function CsvImportModal({
         {step === "upload" && (
           <div className="mt-2">
             <p className="text-sm mb-4" style={{ color: "var(--color-muted)" }}>
-              EightからエクスポートしたCSVファイルを選択してください。
+              名刺管理アプリからエクスポートしたCSVファイルを選択してください。
             </p>
             <div
               onClick={() => fileInputRef.current?.click()}

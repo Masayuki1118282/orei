@@ -456,7 +456,7 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
                   }}
                 >
                   <Upload size={11} />
-                  Eight取込
+                  CSV取込
                 </button>
                 <button
                   onClick={handleExportCSV}
@@ -491,7 +491,7 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
               className="mt-4 text-sm font-medium"
               style={{ color: "var(--color-accent)" }}
             >
-              EightのCSVから一括インポート →
+              名刺管理アプリのCSVから一括インポート →
             </button>
           </div>
         ) : filteredContacts.length === 0 ? (
