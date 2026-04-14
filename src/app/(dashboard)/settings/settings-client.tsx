@@ -102,10 +102,27 @@ export default function SettingsClient({ profile, userEmail }: Props) {
     setConfirmPassword("");
   }
 
-  async function handleUpgrade() {
-    const res = await fetch("/api/stripe/checkout", { method: "POST" });
+  const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
+
+  async function handleCheckout(planType: string) {
+    setCheckoutLoading(planType);
+    const envMap: Record<string, string | undefined> = {
+      light_monthly: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_LIGHT_MONTHLY,
+      light_yearly: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_LIGHT_YEARLY,
+      personal_monthly: undefined,
+      personal_yearly: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID_PERSONAL_YEARLY,
+    };
+    const body: Record<string, string> = { planType };
+    const priceId = envMap[planType];
+    if (priceId) body.priceId = priceId;
+    const res = await fetch("/api/stripe/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
     const data = await res.json();
     if (data.url) window.location.href = data.url;
+    else { toast.error("処理に失敗しました"); setCheckoutLoading(null); }
   }
 
   return (
@@ -197,24 +214,52 @@ export default function SettingsClient({ profile, userEmail }: Props) {
               {profile ? PLAN_LABELS[profile.plan] : "FREE"}
             </Badge>
           </div>
-          {!profile || !isPaidPlan(profile.plan) ? (
-            <div>
-              <p className="text-sm mb-4" style={{ color: "var(--color-muted)" }}>
-                無料プランは月7通まで。有料プランにアップグレードするとさらに多く利用できます。
-              </p>
-              <Button onClick={handleUpgrade} className="w-full h-11 rounded-lg font-semibold" style={{ backgroundColor: "var(--color-accent)", color: "#fff" }}>
-                有料プランへアップグレード
-              </Button>
-            </div>
-          ) : (
-            <div>
-              <p className="text-sm mb-4" style={{ color: "var(--color-muted)" }}>
-                月{profile ? PLAN_LIMITS[profile.plan] : 0}通まで利用できます。解約・変更はStripeポータルから。
-              </p>
-              <Button onClick={handlePortal} disabled={portalLoading} variant="outline" className="w-full h-11 rounded-lg" style={{ borderColor: "var(--color-border)" }}>
-                {portalLoading ? "処理中..." : "サブスクリプション管理"}
-              </Button>
-            </div>
+
+          {/* プランカード */}
+          <div className="space-y-3 mb-4">
+            {([
+              { planType: "light_monthly",  label: "LIGHT 月額",    price: "¥980/月",  desc: "月20通" },
+              { planType: "light_yearly",   label: "LIGHT 年額",    price: "¥8,160/年", desc: "月20通・月換算¥680" },
+              { planType: "personal_monthly", label: "PERSONAL 月額", price: "¥1,980/月", desc: "月50通" },
+              { planType: "personal_yearly",  label: "PERSONAL 年額", price: "¥15,360/年", desc: "月50通・月換算¥1,280" },
+            ] as const).map(({ planType, label, price, desc }) => {
+              const isCurrent = profile?.plan === planType;
+              return (
+                <div
+                  key={planType}
+                  className="flex items-center justify-between p-4 rounded-xl"
+                  style={{
+                    border: isCurrent ? "2px solid var(--color-accent)" : "1px solid var(--color-border)",
+                    backgroundColor: isCurrent ? "#f0faf5" : "var(--color-bg)",
+                  }}
+                >
+                  <div>
+                    <p className="text-sm font-semibold" style={{ color: "var(--color-text)" }}>{label}</p>
+                    <p className="text-xs" style={{ color: "var(--color-muted)" }}>{price}・{desc}</p>
+                  </div>
+                  {isCurrent ? (
+                    <span className="text-xs font-semibold px-3 py-1 rounded-full" style={{ backgroundColor: "var(--color-accent)", color: "#fff" }}>
+                      現在のプラン
+                    </span>
+                  ) : (
+                    <Button
+                      onClick={() => handleCheckout(planType)}
+                      disabled={!!checkoutLoading}
+                      className="h-8 px-4 text-xs rounded-lg font-semibold"
+                      style={{ backgroundColor: "var(--color-accent)", color: "#fff" }}
+                    >
+                      {checkoutLoading === planType ? "処理中..." : profile && isPaidPlan(profile.plan) ? "変更する" : "申し込む"}
+                    </Button>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {isPaidPlan(profile?.plan ?? "free") && (
+            <Button onClick={handlePortal} disabled={portalLoading} variant="outline" className="w-full h-10 rounded-lg text-sm" style={{ borderColor: "var(--color-border)" }}>
+              {portalLoading ? "処理中..." : "解約・支払い管理（Stripeポータル）"}
+            </Button>
           )}
         </section>
 
