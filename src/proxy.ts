@@ -43,6 +43,8 @@ export async function proxy(request: NextRequest) {
     !pathname.startsWith("/signup") &&
     !pathname.startsWith("/auth") &&
     !pathname.startsWith("/onboarding") &&
+    !pathname.startsWith("/forgot-password") &&
+    !pathname.startsWith("/reset-password") &&
     !pathname.startsWith("/privacy") &&
     !pathname.startsWith("/tokushoho") &&
     !pathname.startsWith("/features") &&
