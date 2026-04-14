@@ -456,7 +456,7 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
                   }}
                 >
                   <Upload size={11} />
-                  CSV取込
+                  CSVインポート
                 </button>
                 <button
                   onClick={handleExportCSV}
@@ -468,7 +468,7 @@ export default function DashboardClient({ contacts: initialContacts, remaining, 
                   }}
                 >
                   <Download size={11} />
-                  CSV
+                  CSVエクスポート
                 </button>
               </div>
             </div>
