@@ -102,6 +102,7 @@ export default async function DashboardPage({
   const limit = PLAN_LIMITS[plan];
   const remaining = Math.max(0, limit - (profile?.monthly_usage ?? 0));
   console.log("[dashboard/page] final plan:", plan, "remaining:", remaining);
+  console.log("[dashboard/page] tutorial_completed:", profile?.tutorial_completed, "profile null:", profile === null);
 
   return (
     <DashboardClient
