@@ -43,7 +43,7 @@ const USE_CASES = [
   {
     value: "cold_dm",
     label: "新規アプローチのDM",
-    desc: "まだ面識のない見込み客へ送るコールドメール・SNS DMを生成",
+    desc: "見込み顧客へ送る、コールドメール、営業用DMを生成",
     icon: "📨",
   },
 ];
